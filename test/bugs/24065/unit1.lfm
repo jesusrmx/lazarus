@@ -1,0 +1,57 @@
+object Form1: TForm1
+  Left = 121
+  Height = 433
+  Top = 125
+  Width = 549
+  Caption = 'Form1'
+  ClientHeight = 433
+  ClientWidth = 549
+  OnCreate = FormCreate
+  LCLVersion = '1.1'
+  object StringGrid1: TStringGrid
+    Left = 44
+    Height = 257
+    Top = 46
+    Width = 428
+    Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goRowSizing, goColSizing, goEditing, goSmoothScroll]
+    TabOrder = 0
+  end
+  object Button1: TButton
+    Left = 228
+    Height = 25
+    Top = 324
+    Width = 75
+    Caption = 'Button1'
+    OnClick = Button1Click
+    TabOrder = 1
+  end
+  object btn100: TButton
+    Tag = 100
+    Left = 372
+    Height = 25
+    Top = 324
+    Width = 95
+    Caption = 'Col[100]:=-1'
+    OnClick = btn100Click
+    TabOrder = 2
+  end
+  object CheckBox1: TCheckBox
+    Left = 48
+    Height = 21
+    Top = 372
+    Width = 90
+    Caption = 'CheckBox1'
+    OnClick = CheckBox1Click
+    TabOrder = 3
+  end
+  object btn2: TButton
+    Tag = 2
+    Left = 372
+    Height = 25
+    Top = 360
+    Width = 95
+    Caption = 'Col[2]:=-1'
+    OnClick = btn100Click
+    TabOrder = 4
+  end
+end
