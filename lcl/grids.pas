@@ -34,6 +34,7 @@ unit Grids;
 
 {$mode objfpc}{$H+}
 {$define NewCols}
+
 interface
 
 uses
@@ -182,7 +183,7 @@ type
 
   PColRowProps= ^TColRowProps;
   TColRowProps=record
-    Tamano: Integer;
+    Size: Integer;
     FixedAttr: pointer;
     NormalAttr: pointer;
   end;
@@ -389,8 +390,8 @@ type
       property RowCount: Integer read FRowCount write SetRowCount;
 
       property Celda[Col,Row: Integer]: PCellProps read GetCells write SetCells;
-      property ColsN[Col: Integer]: PColRowProps read GetCols write SetCols;
-      property RowsN[Row: Integer]: PColRowProps read GetRows write SetRows;
+      property Cols[Col: Integer]: PColRowProps read GetCols write SetCols;
+      property Rows[Row: Integer]: PColRowProps read GetRows write SetRows;
   end;
 
   { TGridColumnTitle }
@@ -1201,7 +1202,7 @@ type
 
   TCustomDrawGrid=class(TCustomGrid)
   private
-    FNegativeColRowSizeHide: boolean;
+    FInvalidColRowSizeSetDefault: boolean;
     FOnColRowDeleted: TgridOperationEvent;
     FOnColRowExchanged: TgridOperationEvent;
     FOnColRowInserted: TGridOperationEvent;
@@ -1286,7 +1287,7 @@ type
     property GridWidth;
     property IsCellSelected;
     property LeftCol;
-    property NegativeColRowSizeHide: boolean read FNegativeColRowSizeHide write FNegativeColRowSizeHide;
+    property InvalidColRowSizeSetDefault: boolean read FInvalidColRowSizeSetDefault write FInvalidColRowSizeSetDefault;
     property Row;
     property RowHeights;
     property SaveOptions;
@@ -2515,63 +2516,83 @@ var
 begin
 
   with FSizing do begin
-
-    OrgIndex := FGCache.ClickCell.X;
-    Index := OrgIndex;
+    //OrgIndex := FGCache.ClickCell.X;
+    //Index := OrgIndex;
     ColRowToOffset(true, true, Index, OffIni, OffEnd);
 
-    if (OffEnd-FGCache.ClickMouse.X) <  (FGCache.ClickMouse.X-OffIni) then begin
-      if X>FGCache.ClickMouse.X then
-        ACase := 4  // dragging right side to the right
-      else
-        ACase := 3; // dragging right side to the left
-    end else begin
-      if X>FGCache.ClickMouse.X then
-        ACase := 2  // dragging left side to the right
-      else
-        ACase := 1; // dragging left side to the left
-    end;
+    //if (OffEnd-FGCache.ClickMouse.X) <  (FGCache.ClickMouse.X-OffIni) then begin
+    //  if X>FGCache.ClickMouse.X then
+    //    ACase := 4  // dragging right side to the right
+    //  else
+    //    ACase := 3; // dragging right side to the left
+    //end else begin
+    //  if X>FGCache.ClickMouse.X then
+    //    ACase := 2  // dragging left side to the right
+    //  else
+    //    ACase := 1; // dragging left side to the left
+    //end;
 
-    if UseRightToLeftAlignment then begin
-      case ACase of
-        1: ACase := 4;
-        2: ACase := 3;
-        3: ACase := 2;
-        4: ACase := 1;
+    //if UseRightToLeftAlignment then begin
+    //  case ACase of
+    //    1: ACase := 4;
+    //    2: ACase := 3;
+    //    3: ACase := 2;
+    //    4: ACase := 1;
+    //  end;
+    //end;
+    //
+    //case ACase of
+    //  3: ; // current column is the right one to resize
+    //  4:   // find following covered column (visible 0-width) at the right side
+    //    begin
+    //      TmpIndex := Index;
+    //      while (TmpIndex<ColCount-1) and (ColWidths[TmpIndex+1]=0) do begin
+    //        Inc(TmpIndex);
+    //        if (not Columns.Enabled and IsHiddenColumnResizeable(TmpIndex)) or
+    //          ColumnFromGridColumn(TmpIndex).Visible then
+    //          Index := TmpIndex;
+    //      end;
+    //    end;
+    //  2:   // find previous visible (width>0) or covered column
+    //    begin
+    //      Dec(Index);
+    //      while (Index>FixedCols) do begin
+    //        if not Columns.Enabled or ColumnFromGridColumn(Index).Visible then
+    //          break;
+    //        Dec(Index);
+    //      end;
+    //    end;
+    //  1:   // find previous visible (width>0) column
+    //    begin
+    //      Dec(Index);
+    //      while (Index>FixedCols) do begin
+    //        if ColWidths[Index]>0 then
+    //          break;
+    //        Dec(Index);
+    //      end;
+    //    end;
+    //end;
+    //
+    //if OrgIndex<>Index then
+    //  ColRowToOffset(True, True, Index, OffIni, OffEnd);
+
+    OrgIndex := Index;
+    if x>FGCache.ClickMouse.x then begin
+      // going to right of col index
+      // find the following zero-width-resizeable column
+      TmpIndex := Index;
+      while (TmpIndex<ColCount-1) and (ColWidths[TmpIndex+1]=0) do begin
+        Inc(TmpIndex);
+        if (Columns.Enabled and ColumnFromGridColumn(TmpIndex).Visible) or
+           (not Columns.Enabled and IsHiddenColumnResizeable(TmpIndex))
+        then
+          Index := TmpIndex;
       end;
-    end;
 
-    case ACase of
-      3: ; // current column is the right one to resize
-      4:   // find following covered column (visible 0-width) at the right side
-        begin
-          TmpIndex := Index;
-          while (TmpIndex<ColCount-1) and (ColWidths[TmpIndex+1]=0) do begin
-            Inc(TmpIndex);
-            if not Columns.Enabled or ColumnFromGridColumn(TmpIndex).Visible then
-              Index := TmpIndex;
-          end;
-        end;
-      2:   // find previous visible (width>0) or covered column
-        begin
-          Dec(Index);
-          while (Index>FixedCols) do begin
-            if not Columns.Enabled or ColumnFromGridColumn(Index).Visible then
-              break;
-            Dec(Index);
-          end;
-        end;
-      1:   // find previous visible (width>0) column
-        begin
-          Dec(Index);
-          while (Index>FixedCols) do begin
-            if ColWidths[Index]>0 then
-              break;
-            Dec(Index);
-          end;
-        end;
+    end else begin
+      // going to the left, this means the curent column
+      // will be modified
     end;
-
     if OrgIndex<>Index then
       ColRowToOffset(True, True, Index, OffIni, OffEnd);
 
@@ -5251,12 +5272,14 @@ end;
 function TCustomGrid.doColSizing(X, Y: Integer): Boolean;
 var
   Offset: Integer;
-
+  // in case cursor is closer to left side, the selected column
+  // should be the previous one, but, skip all zero width columns
+  // when trying to find the previous one
   procedure FindPrevColumn;
   begin
     with FSizing do begin
       Dec(Index);
-      while (Index>FixedCols) and IsHiddenColumnResizeable(Index) do
+      while (Index>FixedCols) and (ColWidths[Index]=0) do
         Dec(Index);
     end;
   end;
@@ -5309,6 +5332,7 @@ begin
       Index := ColCount-1
     else
       OffsetToColRow(True, True, X, Index, Offset);
+    // now the cell has been found, get cell boundaries
     ColRowToOffset(True, true, Index, OffIni, OffEnd);
 
     if OffEnd>FGCache.ClientWidth then
@@ -5330,7 +5354,6 @@ begin
       else
         Offset := FFixedCols;
       if Index>=Offset then begin
-        DebugLn(['La columna candidata es: ', Index,' offset es=', offset]);
         // start resizing
         if Cursor<>crHSplit then begin
           PrevLine := false;
@@ -6884,7 +6907,7 @@ end;
 
 function TCustomGrid.IsHiddenColumnResizeable(AIndex: Integer): boolean;
 begin
-  result := ColWidths[AIndex]=0;
+  result := true;
 end;
 
 function TCustomGrid.MoveExtend(Relative: Boolean; DCol, DRow: Integer): Boolean;
@@ -8999,7 +9022,7 @@ begin
   New(Result);
   Result^.FixedAttr:=nil;
   Result^.NormalAttr:=nil;
-  Result^.Tamano:=GCSIZENOTSET;
+  Result^.Size:=GCSIZENOTSET;
 end;
 
 {$ifdef DbgMem}
@@ -9592,14 +9615,14 @@ function TCustomDrawGrid.InternalCheckDefaultColRowSize(IsColumn: boolean;
 var
   pcr: PColRowProps;
 begin
-  if (aValue<0) and FNegativeColRowSizeHide then begin
+  if (aValue<0) and not InvalidColRowSizeSetDefault then begin
 
     // primero guardar el valor de size deseado
     if IsColumn then
-      pcr := FGrid.ColsN[aIndex]
+      pcr := FGrid.Cols[aIndex]
     else
-      pcr := FGrid.RowsN[aIndex];
-    pcr^.Tamano := aValue;
+      pcr := FGrid.Rows[aIndex];
+    pcr^.Size := aValue;
 
     // despues, cuando FNegativeColRoWSizeHide es set, debemos
     // simular que se ha especificado un size=0
@@ -9616,15 +9639,15 @@ var
   pcr: PColRowProps;
 begin
   // verificar si nuestra columna es especial
-  if NegativeColRowSizeHide and (ColWidths[aIndex]=0) then begin
-    DebugLn(['Checando... ',aIndex]);
-    pcr := FGrid.ColsN[aIndex];
-    if pcr^.Tamano<>GCSIZENOTSET then begin
-      result := false;
+  result := true;
+  if not InvalidColRowSizeSetDefault then begin
+    // normal non-zero width column
+    if (ColWidths[aIndex]>0) then
       exit;
-    end;
+    // zero width column tagged as unsizeable?
+    pcr := FGrid.Cols[aIndex];
+    result := pcr^.Size=GCSIZENOTSET;
   end;
-  Result:=inherited IsHiddenColumnResizeable(AIndex);
 end;
 
 procedure TCustomDrawGrid.KeyDown(var Key: Word; Shift: TShiftState);
@@ -9791,6 +9814,7 @@ constructor TCustomDrawGrid.Create(AOwner: TComponent);
 begin
   fGrid:=CreateVirtualGrid;
   inherited Create(AOwner);
+  fInvalidColRowSizeSetDefault := true;
 end;
 
 destructor TCustomDrawGrid.Destroy;
@@ -10732,7 +10756,7 @@ begin
   for i:=0 to ColCount-1 do begin
     pcr := FGrid.ColsN[i];
     if pcr<>nil then
-      DebugLn('Col%d: Size=%3d',[i, pcr^.Tamano])
+      DebugLn('Col%d: Size=%3d',[i, pcr^.Size])
     else
       DebugLn('Col%d: nil');
   end;
@@ -10741,7 +10765,7 @@ begin
   for i:=0 to RowCount-1 do begin
     pcr := FGrid.RowsN[i];
     if pcr<>nil then
-      DebugLn('Row%d: Size=%3d',[i, pcr^.Tamano])
+      DebugLn('Row%d: Size=%3d',[i, pcr^.Size])
     else
       DebugLn('Row%d: nil');
   end;

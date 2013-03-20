@@ -39,7 +39,7 @@ implementation
 
 procedure TForm1.Button1Click(Sender: TObject);
 begin
-  Stringgrid1.Report;
+  //Stringgrid1.Report;
 end;
 
 procedure TForm1.btn100Click(Sender: TObject);
@@ -49,14 +49,14 @@ end;
 
 procedure TForm1.CheckBox1Click(Sender: TObject);
 begin
-  Stringgrid1.NegativeColRowSizeHide := Checkbox1.Checked;
+  Stringgrid1.InvalidColRowSizeSetDefault := Checkbox1.Checked;
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 var
   i: Integer;
 begin
-  Checkbox1.Checked := StringGrid1.NegativeColRowSizeHide;
+  Checkbox1.Checked := StringGrid1.InvalidColRowSizeSetDefault;
   for i:=StringGrid1.FixedCols to Stringgrid1.ColCount-1 do
     Stringgrid1.Cells[i,0] := Chr( ord('A') + i-StringGrid1.FixedCols);
 end;
