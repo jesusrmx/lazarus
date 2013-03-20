@@ -34,7 +34,6 @@ unit Grids;
 
 {$mode objfpc}{$H+}
 {$define NewCols}
-
 interface
 
 uses
@@ -72,6 +71,7 @@ const
   DEFCOLWIDTH     = 64;
   DEFROWHEIGHT    = 20;
   DEFBUTTONWIDTH  = 25;
+  GCSIZENOTSET    = MaxInt;
 
 type
   EGridException = class(Exception);
@@ -182,7 +182,7 @@ type
 
   PColRowProps= ^TColRowProps;
   TColRowProps=record
-    Size: Integer;
+    Tamano: Integer;
     FixedAttr: pointer;
     NormalAttr: pointer;
   end;
@@ -381,13 +381,14 @@ type
       procedure Clear;
       function GetDefaultCell: PcellProps;
       function GetDefaultColRow: PColRowProps;
+      procedure Report;
 
       property ColCount: Integer read FColCount write SetColCount;
       property RowCount: Integer read FRowCount write SetRowCount;
 
       property Celda[Col,Row: Integer]: PCellProps read GetCells write SetCells;
-      property Cols[Col: Integer]: PColRowProps read GetCols write SetCols;
-      property Rows[Row: Integer]: PColRowProps read GetRows write SetRows;
+      property ColsN[Col: Integer]: PColRowProps read GetCols write SetCols;
+      property RowsN[Row: Integer]: PColRowProps read GetRows write SetRows;
   end;
 
   { TGridColumnTitle }
@@ -985,11 +986,13 @@ type
     procedure HeaderSized(IsColumn: Boolean; index: Integer); virtual;
     procedure HeaderSizing(const IsColumn:boolean; const AIndex,ASize:Integer); virtual;
     procedure HideCellHintWindow;
+    function  InternalCheckDefaultColRowSize(IsColumn: boolean; aIndex: Integer; var aValue:Integer): Integer; virtual;
     procedure InternalSetColCount(ACount: Integer);
     procedure InvalidateCell(aCol, aRow: Integer; Redraw: Boolean); overload;
     procedure InvalidateFromCol(ACol: Integer);
     procedure InvalidateGrid;
     procedure InvalidateFocused;
+    function  IsHiddenColumnResizeable(AIndex: Integer): boolean; virtual;
     function  GetIsCellTitle(aCol,aRow: Integer): boolean; virtual;
     function  GetIsCellSelected(aCol, aRow: Integer): boolean; virtual;
     procedure KeyDown(var Key : Word; Shift : TShiftState); override;
@@ -1196,6 +1199,7 @@ type
 
   TCustomDrawGrid=class(TCustomGrid)
   private
+    FNegativeColRowSizeHide: boolean;
     FOnColRowDeleted: TgridOperationEvent;
     FOnColRowExchanged: TgridOperationEvent;
     FOnColRowInserted: TGridOperationEvent;
@@ -1229,6 +1233,8 @@ type
     procedure HeaderClick(IsColumn: Boolean; index: Integer); override;
     procedure HeaderSized(IsColumn: Boolean; index: Integer); override;
     procedure HeaderSizing(const IsColumn:boolean; const AIndex,ASize:Integer); override;
+    function  InternalCheckDefaultColRowSize(IsColumn: boolean; aIndex: Integer; var aValue:Integer): Integer; override;
+    function  IsHiddenColumnResizeable(AIndex: Integer): boolean; override;
     procedure KeyDown(var Key : Word; Shift : TShiftState); override;
     procedure NotifyColRowChange(WasInsert,IsColumn:boolean; FromIndex,ToIndex:Integer);
     function  SelectCell(aCol,aRow: Integer): boolean; override;
@@ -1278,6 +1284,7 @@ type
     property GridWidth;
     property IsCellSelected;
     property LeftCol;
+    property NegativeColRowSizeHide: boolean read FNegativeColRowSizeHide write FNegativeColRowSizeHide;
     property Row;
     property RowHeights;
     property SaveOptions;
@@ -1573,6 +1580,7 @@ type
                                 VisibleColumnsOnly: boolean=false);
       procedure SaveToCSVFile(AFileName: string; ADelimiter: Char=','; WithHeader: boolean=true;
                                 VisibleColumnsOnly: boolean=false);
+      procedure Report;
 
       property Cells[ACol, ARow: Integer]: string read GetCells write SetCells;
       property Cols[index: Integer]: TStrings read GetCols write SetCols;
@@ -2153,11 +2161,7 @@ var
   R: TRect;
   Bigger: boolean;
 begin
-  NewSize := AValue;
-  if NewSize<0 then begin
-    AValue:=-1;
-    NewSize := FDefColWidth;
-  end;
+  NewSize := InternalCheckDefaultColRowSize(true, aCol, aValue);
 
   OldSize := integer(PtrUInt(FCols[ACol]));
   if NewSize<>OldSize then begin
@@ -2334,12 +2338,12 @@ begin
   result:=fTopLeft.x;
 end;
 
-function TCustomGrid.Getcolcount: Integer;
+function TCustomGrid.GetColCount: Integer;
 begin
   Result:=FCols.Count;
 end;
 
-function TCustomGrid.Getrowcount: Integer;
+function TCustomGrid.GetRowCount: Integer;
 begin
   Result:=FRows.Count;
 end;
@@ -2591,7 +2595,7 @@ begin
   end;
 end;
 
-procedure TCustomGrid.Setrowheights(Arow: Integer; Avalue: Integer);
+procedure TCustomGrid.SetRowheights(Arow: Integer; Avalue: Integer);
 var
   OldSize,NewSize: Integer;
   R: TRect;
@@ -2643,7 +2647,7 @@ begin
   end;
 end;
 
-procedure TCustomGrid.Setcolwidths(Acol: Integer; Avalue: Integer);
+procedure TCustomGrid.SetColwidths(Acol: Integer; Avalue: Integer);
 var
   c: TGridColumn;
   OldWidth: Integer;
@@ -2667,7 +2671,8 @@ begin
   FCols[ACol]:=Pointer(PtrInt(Avalue));
 end;
 
-procedure TCustomGrid.AdjustCount(IsColumn: Boolean; OldValue, newValue: Integer);
+procedure TCustomGrid.AdjustCount(IsColumn: Boolean; OldValue, NewValue: Integer
+  );
   procedure AddDel(Lst: TList; aCount: Integer);
   begin
     while lst.Count<aCount do Lst.Add(Pointer(-1)); // default width/height
@@ -2942,7 +2947,7 @@ begin
   end;
 end;
 
-procedure TCustomGrid.doTopleftChange(dimChg: Boolean);
+procedure TCustomGrid.doTopleftChange(DimChg: Boolean);
 begin
   TopLeftChanged;
   VisualChange;
@@ -3387,7 +3392,8 @@ procedure TCustomGrid.ColRowMoved(IsColumn: Boolean; FromIndex,ToIndex: Integer)
 begin
 end;
 
-procedure TCustomGrid.ColRowExchanged(isColumn: Boolean; index, WithIndex: Integer);
+procedure TCustomGrid.ColRowExchanged(IsColumn: Boolean; index,
+  WithIndex: Integer);
 begin
 end;
 
@@ -3636,6 +3642,19 @@ procedure TCustomGrid.HideCellHintWindow;
 begin
   Hint := FSavedHint;
   Application.CancelHint;
+end;
+
+function TCustomGrid.InternalCheckDefaultColRowSize(IsColumn: boolean;
+  aIndex: Integer; var aValue: Integer): Integer;
+begin
+  result := aValue;
+  if result<0 then begin
+    aValue:=-1;
+    if IsColumn then
+      result := FDefColWidth
+    else
+      result := FDefRowHeight;
+  end;
 end;
 
 function TCustomGrid.SelectCell(ACol, ARow: Integer): Boolean;
@@ -4573,7 +4592,7 @@ begin
 end;
 
 { Scroll grid to the given Topleft[aCol,aRow] as needed }
-procedure TCustomGrid.TryScrollTo(aCol, aRow: Integer);
+procedure TCustomGrid.TryScrollTo(aCol, aRow: integer);
 var
   TryTL: TPoint;
   NewCol,NewRow: Integer;
@@ -4702,7 +4721,7 @@ begin
 end;
 
 procedure TCustomGrid.GetSBRanges(const HsbVisible, VsbVisible: boolean; out
-  HsbRange,VsbRange,HsbPage,VSbPage,HsbPos,VsbPos: Integer);
+  HsbRange, VsbRange, HsbPage, VsbPage, HsbPos, VsbPos: Integer);
 begin
   with FGCache do begin
 
@@ -5233,7 +5252,7 @@ var
   begin
     with FSizing do begin
       Dec(Index);
-      while (Index>FixedCols) and (ColWidths[Index]=0) do
+      while (Index>FixedCols) and IsHiddenColumnResizeable(Index) do
         Dec(Index);
     end;
   end;
@@ -5307,6 +5326,7 @@ begin
       else
         Offset := FFixedCols;
       if Index>=Offset then begin
+        WriteLn('La columna candidata es: ', Index,' offset es=', offset);
         // start resizing
         if Cursor<>crHSplit then begin
           PrevLine := false;
@@ -5768,7 +5788,8 @@ begin
     Inc(FSortColumn);
 end;
 
-procedure TCustomGrid.doOPMoveColRow(IsColumn: Boolean; FromIndex, ToIndex: Integer);
+procedure TCustomGrid.DoOPMoveColRow(IsColumn: Boolean; FromIndex,
+  ToIndex: Integer);
 var
   ColRow: Integer;
 begin
@@ -6499,7 +6520,7 @@ begin
   Result := BidiFlipX(X, GCache.ClientRect, UseRightToLeftAlignment);
 end;
 
-procedure TCustomGrid.doExit;
+procedure TCustomGrid.DoExit;
 begin
   if not (csDestroying in ComponentState) then begin
     {$IfDef dbgGrid}DebugLnEnter('DoExit - INIT');{$Endif}
@@ -6788,7 +6809,7 @@ begin
   Result := MouseToCell(Point(X,Y));
 end;
 
-function TCustomGrid.ISCellVisible(aCol, aRow: Integer): Boolean;
+function TCustomGrid.IscellVisible(aCol, aRow: Integer): Boolean;
 begin
   with FGCache.VisibleGrid do
     Result:= (Left<=ACol)and(aCol<=Right)and(Top<=aRow)and(aRow<=Bottom);
@@ -6855,6 +6876,11 @@ begin
     else
       InvalidateCell(Col,Row);
   end;
+end;
+
+function TCustomGrid.IsHiddenColumnResizeable(AIndex: Integer): boolean;
+begin
+  result := ColWidths[AIndex]=0;
 end;
 
 function TCustomGrid.MoveExtend(Relative: Boolean; DCol, DRow: Integer): Boolean;
@@ -7641,7 +7667,7 @@ begin
     FOnGetCellHint(self, ACol, ARow, result);
 end;
 
-function TCustomGrid.GetTruncCellHintText(ACol, ARow: Integer): String;
+function TCustomGrid.GetTruncCellHintText(ACol, ARow: Integer): string;
 begin
   Result := GetCells(ACol, ARow);
 end;
@@ -8260,7 +8286,7 @@ begin
     dec(result); // extreme case may return -1
 end;
 
-function TCustomGrid.GetLastVisibleRow: integer;
+function TCustomGrid.GetLastVisibleRow: Integer;
 begin
   result := RowCount-1;
   while (result>=0) and (RowHeights[result]=0) do
@@ -8854,12 +8880,12 @@ begin
   Result:=FCells[Col,Row];
 end;
 
-function Tvirtualgrid.Getrows(Row: Integer): PColRowprops;
+function TVirtualGrid.Getrows(Row: Integer): PColRowprops;
 begin
   Result:= FRows[Row, 0];
 end;
 
-function Tvirtualgrid.Getcols(Col: Integer): PColRowProps;
+function TVirtualGrid.Getcols(Col: Integer): PColRowprops;
 begin
   result:=FCols[Col, 0];
 end;
@@ -8876,7 +8902,7 @@ begin
   FCells[Col,Row]:=Cell;
 end;
 
-procedure Tvirtualgrid.Setrows(Row: Integer; const Avalue: PColRowProps);
+procedure TVirtualGrid.Setrows(Row: Integer; const Avalue: PColRowprops);
 var
    C: PColRowProps;
 begin
@@ -8886,11 +8912,11 @@ begin
   FRows[Row,0]:=AValue;
 end;
 
-procedure Tvirtualgrid.Setcolcount(const Avalue: Integer);
+procedure TVirtualGrid.Setcolcount(const Avalue: Integer);
 begin
   if FColCount=Avalue then Exit;
   {$Ifdef dbgMem}
-    DebugLn('TVirtualGrid.SetColCount Value=',AValue);
+    DebugLn(['TVirtualGrid.SetColCount Value=',AValue]);
   {$Endif}
   FColCount:=AValue;
   {$Ifdef dbgMem}
@@ -8898,17 +8924,17 @@ begin
   {$Endif}
   FCols.SetLength(FColCount, 1);
   {$Ifdef dbgMem}
-    DBGOut('TVirtualGrid.SetColCount->FCELLS(',FColCount,',',FRowCount,'): ');
+    DBGOut(['TVirtualGrid.SetColCount->FCELLS(',FColCount,',',FRowCount,'): ']);
   {$Endif}
   FCells.SetLength(FColCount, FRowCount);
 end;
 
 
-procedure Tvirtualgrid.Setrowcount(const Avalue: Integer);
+procedure TVirtualGrid.Setrowcount(const Avalue: Integer);
 begin
   if FRowCount=AValue then Exit;
   {$Ifdef dbgMem}
-    DebugLn('TVirtualGrid.SetRowCount Value=',AValue);
+    DebugLn(['TVirtualGrid.SetRowCount Value=',AValue]);
   {$Endif}
   FRowCount:=AValue;
   {$Ifdef dbgMem}
@@ -8916,12 +8942,12 @@ begin
   {$Endif}
   FRows.SetLength(FRowCount,1);
   {$Ifdef dbgMem}
-    DBGOut('TVirtualGrid.SetRowCount->FCELLS(',FColCount,',',FRowCount,'): ');
+    DBGOut(['TVirtualGrid.SetRowCount->FCELLS(',FColCount,',',FRowCount,'): ']);
   {$Endif}
   FCells.SetLength(FColCount, FRowCount);
 end;
 
-procedure Tvirtualgrid.Setcols(Col: Integer; const Avalue: PColRowProps);
+procedure TVirtualGrid.Setcols(Col: Integer; const Avalue: PColRowprops);
 var
    C: PColRowProps;
 begin
@@ -8931,7 +8957,7 @@ begin
   FCols[Col,0]:=AValue;
 end;
 
-procedure Tvirtualgrid.Clear;
+procedure TVirtualGrid.Clear;
 begin
   {$Ifdef dbgMem}DBGOut('FROWS: ');{$Endif}FRows.Clear;
   {$Ifdef dbgMem}DBGOut('FCOLS: ');{$Endif}FCols.Clear;
@@ -8940,7 +8966,7 @@ begin
   FRowCount:=0;
 end;
 
-procedure Tvirtualgrid.Disposecell(var P: Pcellprops);
+procedure TVirtualGrid.DisposeCell(var P: PCellProps);
 begin
   if P<>nil then begin
     if P^.Text<>nil then StrDispose(P^.Text);
@@ -8969,15 +8995,28 @@ begin
   New(Result);
   Result^.FixedAttr:=nil;
   Result^.NormalAttr:=nil;
-  Result^.Size:=-1;
+  Result^.Tamano:=GCSIZENOTSET;
 end;
 
-procedure Tvirtualgrid.Dodestroyitem (Sender: Tobject; Col,Row: Integer;
+procedure TVirtualGrid.Report;
+begin
+  DebugLnEnter('Cols: ');
+  FCols.Report;
+  DebugLnExit('');
+  DebugLnEnter('Rows: ');
+  FRows.Report;
+  DebugLnExit('');
+  DebugLnEnter('Cells: ');
+  FCells.Report;
+  DebugLnExit('');
+end;
+
+procedure TVirtualGrid.doDestroyItem(Sender: TObject; Col, Row: Integer;
   var Item: Pointer);
 begin
   {$Ifdef dbgMem}
-    DebugLn('TVirtualGrid.doDestroyItem Col=',Col,' Row= ',
-            Row,' Item=',Integer(Item));
+    DebugLn(['TVirtualGrid.doDestroyItem Col=',Col,' Row= ',
+            Row,' Item=',Integer(Item)]);
   {$endif}
   if Item<>nil then begin
     if (Sender=FCols)or(Sender=FRows) then begin
@@ -8989,12 +9028,12 @@ begin
   end;
 end;
 
-procedure Tvirtualgrid.doNewitem(Sender: Tobject; Col,Row:Integer;
+procedure TVirtualGrid.doNewItem(Sender: TObject; Col, Row: Integer;
   var Item: Pointer);
 begin
   {$Ifdef dbgMem}
-    DebugLn('TVirtualGrid.doNewItem Col=',Col,' Row= ',
-            Row,' Item=',Integer(Item));
+    DebugLn(['TVirtualGrid.doNewItem Col=',Col,' Row= ',
+            Row,' Item=',Integer(Item)]);
   {$endif}
   if Sender=FCols then begin
     // Procesar Nueva Columna
@@ -9424,7 +9463,8 @@ begin
   //
 end;
 
-procedure TCustomDrawGrid.CellClick(const ACol, ARow: Integer; const Button:TMouseButton);
+procedure TCustomDrawGrid.CellClick(const aCol, aRow: Integer;
+  const Button: TMouseButton);
 begin
   if (Button=mbLeft) and CellNeedsCheckboxBitmaps(ACol, ARow) then
     ToggleCheckbox;
@@ -9539,6 +9579,46 @@ begin
   inherited HeaderSizing(IsColumn, AIndex, ASize);
   if Assigned(OnHeaderSizing) then
     OnHeaderSizing(self, IsColumn, AIndex, ASize);
+end;
+
+function TCustomDrawGrid.InternalCheckDefaultColRowSize(IsColumn: boolean;
+  aIndex: Integer; var aValue: Integer): Integer;
+var
+  pcr: PColRowProps;
+begin
+  if (aValue<0) and FNegativeColRowSizeHide then begin
+
+    // primero guardar el valor de size deseado
+    if IsColumn then
+      pcr := FGrid.ColsN[aIndex]
+    else
+      pcr := FGrid.RowsN[aIndex];
+    pcr^.Tamano := aValue;
+
+    // despues, cuando FNegativeColRoWSizeHide es set, debemos
+    // simular que se ha especificado un size=0
+    result := 0;
+    aValue := 0;
+
+    // a value remains unchanged
+  end else
+    Result := inherited InternalCheckDefaultColRowSize(IsColumn, aIndex, aValue);
+end;
+
+function TCustomDrawGrid.IsHiddenColumnResizeable(AIndex: Integer): Boolean;
+var
+  pcr: PColRowProps;
+begin
+  // verificar si nuestra columna es especial
+  if NegativeColRowSizeHide and (ColWidths[aIndex]=0) then begin
+    WriteLn('Checando... ',aIndex);
+    pcr := FGrid.ColsN[aIndex];
+    if pcr^.Tamano<>GCSIZENOTSET then begin
+      result := false;
+      exit;
+    end;
+  end;
+  Result:=inherited IsHiddenColumnResizeable(AIndex);
 end;
 
 procedure TCustomDrawGrid.KeyDown(var Key: Word; Shift: TShiftState);
@@ -9828,7 +9908,7 @@ begin
     Result:=TStringGridStrings.Create(Self, AMap, IsCols, index);
 end;
 
-function TCustomStringGrid.Getcells(aCol, aRow: Integer): string;
+function TCustomStringGrid.GetCells(ACol, ARow: Integer): string;
 var
    C: PCellProps;
 begin
@@ -9880,7 +9960,7 @@ begin
   end;
 end;
 
-procedure TCustomStringGrid.Setcells(aCol, aRow: Integer; const Avalue: string);
+procedure TCustomStringGrid.SetCells(ACol, ARow: Integer; const AValue: string);
   procedure UpdateCell;
   begin
     if EditorMode and (aCol=FCol)and(aRow=FRow) and
@@ -10285,7 +10365,7 @@ begin
   end;
 end;
 
-procedure TCustomStringGrid.LoadContent(Cfg: TXMLConfig; Version:Integer);
+procedure TCustomStringGrid.LoadContent(cfg: TXMLConfig; Version: Integer);
 var
   ContentSaved: Boolean;
   i,j,k: Integer;
@@ -10630,6 +10710,37 @@ begin
   finally
     TheStream.Free;
   end;
+end;
+
+procedure TCustomStringGrid.Report;
+var
+  pcr: PColRowProps;
+  pcl: PCellProps;
+  i: Integer;
+begin
+  DebugLnEnter('Underlaying LowLevel Virtual Grid');
+  FGrid.Report;
+  DebugLnExit('');
+  DebugLnEnter('HighLevel information');
+  DebugLnEnter('Cols');
+  for i:=0 to ColCount-1 do begin
+    pcr := FGrid.ColsN[i];
+    if pcr<>nil then
+      DebugLn('Col%d: Size=%3d',[i, pcr^.Tamano])
+    else
+      DebugLn('Col%d: nil');
+  end;
+  DebugLnExit('');
+  DebugLnEnter('Rows');
+  for i:=0 to RowCount-1 do begin
+    pcr := FGrid.RowsN[i];
+    if pcr<>nil then
+      DebugLn('Row%d: Size=%3d',[i, pcr^.Tamano])
+    else
+      DebugLn('Row%d: nil');
+  end;
+  DebugLnExit('');
+  DebugLnExit('');
 end;
 
 procedure Register;

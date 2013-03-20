@@ -25,13 +25,15 @@ unit DynamicArray;
 interface
 
 uses
-  Classes, SysUtils; 
+  Classes, SysUtils{$ifdef DbgMem}, LCLProc{$Endif};
 
 type
   EArray=Class(Exception);
   
   TOnNotifyItem = Procedure(Sender: TObject; Col,Row: integer; Var Item: Pointer) of Object;
   TOnExchangeItem = procedure (Sender: TObject; Index, WithIndex: Integer) of Object;
+
+  { TArray }
 
   TArray=Class
   private
@@ -52,6 +54,7 @@ type
     procedure MoveColRow(IsColumn:Boolean; FromIndex, ToIndex: Integer);
     procedure ExchangeColRow(IsColumn:Boolean; Index, WithIndex: Integer);
     procedure Clear;
+    procedure Report;
     
     Property Arr[Col,Row: Integer]: Pointer read GetArr write SetArr; default;
     Property OnDestroyItem: TOnNotifyItem read FOnDestroyItem write FOnDestroyItem;
@@ -96,6 +99,31 @@ begin
   FCols.Clear;
 end;
 
+procedure TArray.Report;
+var
+  i: Integer;
+  p: Pointer;
+  L: TfpList;
+  j: Integer;
+begin
+  for i:=0 to FCols.Count-1 do begin
+    DbgOut('Col %d: ',[i]);
+    L := TFpList(FCols[i]);
+    if L<>nil then begin
+      for j:=0 to L.Count-1 do begin
+        p := L[j];
+        if p=nil then
+          DbgOut('nil ')
+        else
+          DbgOut('set ');
+      end;
+      DebugLn('');
+    end else begin
+      DebugLn('nil');
+    end;
+  end;
+end;
+
 constructor TArray.Create;
 begin
   inherited Create;
@@ -110,7 +138,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TArray.Aumentar_Rows(col,rows: Integer; L: TFpList);
+procedure TArray.Aumentar_Rows(col, Rows: Integer; L: TFpList);
 var
    i,j: Integer;
    P: Pointer;
