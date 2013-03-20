@@ -54,7 +54,9 @@ type
     procedure MoveColRow(IsColumn:Boolean; FromIndex, ToIndex: Integer);
     procedure ExchangeColRow(IsColumn:Boolean; Index, WithIndex: Integer);
     procedure Clear;
+    {$ifdef dbgMem}
     procedure Report;
+    {$endif}
     
     Property Arr[Col,Row: Integer]: Pointer read GetArr write SetArr; default;
     Property OnDestroyItem: TOnNotifyItem read FOnDestroyItem write FOnDestroyItem;
@@ -98,7 +100,7 @@ begin
   end;
   FCols.Clear;
 end;
-
+{$ifdef dbgMem}
 procedure TArray.Report;
 var
   i: Integer;
@@ -123,6 +125,7 @@ begin
     end;
   end;
 end;
+{$endif}
 
 constructor TArray.Create;
 begin

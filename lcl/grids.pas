@@ -381,7 +381,9 @@ type
       procedure Clear;
       function GetDefaultCell: PcellProps;
       function GetDefaultColRow: PColRowProps;
+      {$ifdef dbgMem}
       procedure Report;
+      {$endif}
 
       property ColCount: Integer read FColCount write SetColCount;
       property RowCount: Integer read FRowCount write SetRowCount;
@@ -1580,7 +1582,9 @@ type
                                 VisibleColumnsOnly: boolean=false);
       procedure SaveToCSVFile(AFileName: string; ADelimiter: Char=','; WithHeader: boolean=true;
                                 VisibleColumnsOnly: boolean=false);
+      {$ifdef DbgMem}
       procedure Report;
+      {$endif}
 
       property Cells[ACol, ARow: Integer]: string read GetCells write SetCells;
       property Cols[index: Integer]: TStrings read GetCols write SetCols;
@@ -8998,6 +9002,7 @@ begin
   Result^.Tamano:=GCSIZENOTSET;
 end;
 
+{$ifdef DbgMem}
 procedure TVirtualGrid.Report;
 begin
   DebugLnEnter('Cols: ');
@@ -9010,6 +9015,7 @@ begin
   FCells.Report;
   DebugLnExit('');
 end;
+{$endif}
 
 procedure TVirtualGrid.doDestroyItem(Sender: TObject; Col, Row: Integer;
   var Item: Pointer);
@@ -10711,7 +10717,7 @@ begin
     TheStream.Free;
   end;
 end;
-
+{$ifdef Dbgmem}
 procedure TCustomStringGrid.Report;
 var
   pcr: PColRowProps;
@@ -10742,6 +10748,7 @@ begin
   DebugLnExit('');
   DebugLnExit('');
 end;
+{$endif}
 
 procedure Register;
 begin
