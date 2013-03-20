@@ -5330,7 +5330,7 @@ begin
       else
         Offset := FFixedCols;
       if Index>=Offset then begin
-        WriteLn('La columna candidata es: ', Index,' offset es=', offset);
+        DebugLn(['La columna candidata es: ', Index,' offset es=', offset]);
         // start resizing
         if Cursor<>crHSplit then begin
           PrevLine := false;
@@ -9617,7 +9617,7 @@ var
 begin
   // verificar si nuestra columna es especial
   if NegativeColRowSizeHide and (ColWidths[aIndex]=0) then begin
-    WriteLn('Checando... ',aIndex);
+    DebugLn(['Checando... ',aIndex]);
     pcr := FGrid.ColsN[aIndex];
     if pcr^.Tamano<>GCSIZENOTSET then begin
       result := false;
