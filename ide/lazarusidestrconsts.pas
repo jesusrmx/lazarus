@@ -4306,15 +4306,13 @@ resourcestring
 
   // package explorer (package graph)
   lisMenuPackageGraph = 'Package Graph';
-  lisPckExplLoadedPackages = 'Loaded Packages:';
   lisPckExplUninstallPackage = 'Uninstall package %s';
-  lisPckExplIsRequiredBy = 'Selected package is required by:';
   lisPckExplPackageNotFound = 'Package %s not found';
   lisPckExplState = '%sState: ';
   lisPckExplAutoCreated = 'AutoCreated';
   lisPckExplInstalled = 'Installed';
   lisPckExplInstallOnNextStart = 'Install on next start';
-  lisPckExplUninstallOnNextStart = 'Uninstall on next start';
+  lisPckExplUninstallOnNextStart = 'Uninstall on next start (unless needed by an installed package)';
   lisPckExplBase = 'Base, can not be uninstalled';
 
   // project inspector

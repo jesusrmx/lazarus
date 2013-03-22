@@ -17,8 +17,8 @@ interface
 uses
   Classes, SysUtils, types, math, typinfo,
   FPimage, FPCanvas,
-  AvgLvlTree, LazLoggerBase, LMessages, LCLType, GraphType, GraphMath, Graphics,
-  Controls, ImgList, LCLIntf, Forms;
+  AvgLvlTree, LazLoggerBase, LMessages, LCLType, LResources,
+  GraphType, GraphMath, Graphics, Controls, ImgList, LCLIntf, Forms;
 
 type
   TLazCtrlPalette = array of TFPColor;
@@ -448,6 +448,7 @@ type
     procedure ComputeEdgeCoords;
     procedure DrawEdges(Highlighted: boolean);
     procedure DrawNodes;
+    function GetSelectedNode: TLvlGraphNode;
     procedure SetEdgeNearMouse(AValue: TLvlGraphEdge);
     procedure SetImages(AValue: TCustomImageList);
     procedure SetNodeStyle(AValue: TLvlGraphNodeStyle);
@@ -455,6 +456,7 @@ type
     procedure SetOptions(AValue: TLvlGraphCtrlOptions);
     procedure SetScrollLeft(AValue: integer);
     procedure SetScrollTop(AValue: integer);
+    procedure SetSelectedNode(AValue: TLvlGraphNode);
     procedure UpdateScrollBars;
     procedure WMHScroll(var Msg: TLMScroll); message LM_HSCROLL;
     procedure WMVScroll(var Msg: TLMScroll); message LM_VSCROLL;
@@ -512,6 +514,7 @@ type
     property OnDrawStep: TLvlGraphDrawEvent read FOnDrawStep write FOnDrawStep;
     property Images: TCustomImageList read FImages write SetImages;
     property PixelPerWeight: single read FPixelPerWeight;
+    property SelectedNode: TLvlGraphNode read GetSelectedNode write SetSelectedNode;
   end;
 
   { TLvlGraphControl }
@@ -588,6 +591,8 @@ procedure DrawCurvedLvlLeftToRightEdge(Canvas: TFPCustomCanvas; x1, y1, x2, y2: 
 function dbgs(p: TLvlGraphNodeCaptionPosition): string; overload;
 function dbgs(o: TLvlGraphCtrlOption): string; overload;
 function dbgs(Options: TLvlGraphCtrlOptions): string; overload;
+
+procedure Register;
 
 implementation
 
@@ -931,6 +936,12 @@ begin
       Result+=dbgs(o);
     end;
   Result:='['+Result+']';
+end;
+
+procedure Register;
+begin
+  {$I lvlgraph_icon.lrs}
+  RegisterComponents('LazControls',[TLvlGraphControl]);
 end;
 
 { TLvlGraphEdgeStyle }
@@ -2134,6 +2145,11 @@ begin
   end;
 end;
 
+function TCustomLvlGraphControl.GetSelectedNode: TLvlGraphNode;
+begin
+  Result:=Graph.FirstSelected;
+end;
+
 procedure TCustomLvlGraphControl.SetEdgeNearMouse(AValue: TLvlGraphEdge);
 begin
   if FEdgeNearMouse=AValue then Exit;
@@ -2186,6 +2202,14 @@ begin
   FScrollTop:=AValue;
   UpdateScrollBars;
   Invalidate;
+end;
+
+procedure TCustomLvlGraphControl.SetSelectedNode(AValue: TLvlGraphNode);
+begin
+  if AValue=nil then
+    Graph.ClearSelection
+  else
+    Graph.SingleSelect(AValue);
 end;
 
 procedure TCustomLvlGraphControl.UpdateScrollBars;
@@ -2896,6 +2920,8 @@ begin
   Node.Selected:=true;
   while FirstSelected<>Node do
     FirstSelected.Selected:=false;
+  while LastSelected<>Node do
+    LastSelected.Selected:=false;
 end;
 
 function TLvlGraph.IsMultiSelection: boolean;
@@ -3581,6 +3607,7 @@ procedure TLvlGraphNode.SetSelected(AValue: boolean);
 begin
   if FSelected=AValue then begin
     if Graph=nil then exit;
+    if not FSelected then exit;
     if Graph.LastSelected=Self then exit;
     // make this node the last selected
     Unselect;

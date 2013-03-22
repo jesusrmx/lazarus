@@ -1281,15 +1281,17 @@ The point (11,21,31) specifies the midpoint of the dimension text.
 }
 function TvDXFVectorialReader.ReadENTITIES_DIMENSION(ATokens: TDXFTokens;
   AData: TvVectorialPage; ADoc: TvVectorialDocument; AOnlyCreate: Boolean = False): TvEntity;
+type
+  TDXFDimensionType = (ddtUnknown, ddtAligned, ddtRadial, ddtDiametric, ddt2LineAngular);
 var
   CurToken: TDXFToken;
   i: Integer;
   // DIMENSION
-  BaseLeft, BaseRight, DimensionRight, DimensionLeft, TmpPoint: T3DPoint;
-  lCenter, Dim1, Dim5: T3DPoint;
-  IsAlignedDimension: Boolean = False;
-  IsRadialDimension: Boolean = False;
-  IsDiametricDimension: Boolean = False;
+  BaseLeft, BaseRight, DimensionRight, DimensionLeft, lCenter, lTextPos, TmpPoint: T3DPoint;
+  TmpDimensionRight, TmpDimensionLeft: T3DPoint;
+  Dim0, Dim1, Dim3, Dim4, Dim5, Dim6: T3DPoint;
+  lAngleLeft, lAngleRight, al, bl, lRadius, lBaskaraDelta, ae, be, ce: Double;
+  DXFDimensionType: TDXFDimensionType = ddtUnknown;
 begin
   // Initial values
   BaseLeft.X := 0;
@@ -1308,41 +1310,67 @@ begin
     CurToken := TDXFToken(ATokens.Items[i]);
 
     // Avoid an exception by previously checking if the conversion can be made
-    if CurToken.GroupCode in [10, 20, 30, 11, 21, 31, 13, 23, 33, 14, 24, 34, 15, 25, 35] then
+    if CurToken.GroupCode in [10, 20, 30, 11, 21, 31, 13, 23, 33, 14, 24, 34, 15, 25, 35, 16, 26, 36] then
     begin
       CurToken.FloatValue :=  StrToFloat(Trim(CurToken.StrValue), FPointSeparator);
     end;
 
     case CurToken.GroupCode of
-      10: DimensionRight.X := CurToken.FloatValue;
-      20: DimensionRight.Y := CurToken.FloatValue;
-      30: DimensionRight.Z := CurToken.FloatValue;
+      10: Dim0.X := CurToken.FloatValue;
+      20: Dim0.Y := CurToken.FloatValue;
+      30: Dim0.Z := CurToken.FloatValue;
       11: Dim1.X := CurToken.FloatValue;
       21: Dim1.Y := CurToken.FloatValue;
       31: Dim1.Z := CurToken.FloatValue;
-      13: BaseRight.X := CurToken.FloatValue;
-      23: BaseRight.Y := CurToken.FloatValue;
-      33: BaseRight.Z := CurToken.FloatValue;
-      14: BaseLeft.X := CurToken.FloatValue;
-      24: BaseLeft.Y := CurToken.FloatValue;
-      34: BaseLeft.Z := CurToken.FloatValue;
+      13: Dim3.X := CurToken.FloatValue;
+      23: Dim3.Y := CurToken.FloatValue;
+      33: Dim3.Z := CurToken.FloatValue;
+      14: Dim4.X := CurToken.FloatValue;
+      24: Dim4.Y := CurToken.FloatValue;
+      34: Dim4.Z := CurToken.FloatValue;
       15: Dim5.X := CurToken.FloatValue;
       25: Dim5.Y := CurToken.FloatValue;
       35: Dim5.Z := CurToken.FloatValue;
+      16: Dim6.X := CurToken.FloatValue;
+      26: Dim6.Y := CurToken.FloatValue;
+      36: Dim6.Z := CurToken.FloatValue;
       100:
       begin
-        if CurToken.StrValue = 'AcDbAlignedDimension' then IsAlignedDimension := True
-        else if CurToken.StrValue = 'AcDbRadialDimension' then IsRadialDimension := True
-        else if CurToken.StrValue = 'AcDbDiametricDimension' then IsDiametricDimension := True;
+        if CurToken.StrValue = 'AcDbAlignedDimension' then DXFDimensionType := ddtAligned
+        else if CurToken.StrValue = 'AcDbRadialDimension' then DXFDimensionType := ddtRadial
+        else if CurToken.StrValue = 'AcDbDiametricDimension' then DXFDimensionType := ddtDiametric
+        else if CurToken.StrValue = 'AcDb2LineAngularDimension' then DXFDimensionType := ddt2LineAngular;
       end;
     end;
   end;
+
+  // Position fixing for documents with negative coordinates
+  Dim0.X := Dim0.X - DOC_OFFSET.X;
+  Dim0.Y := Dim0.Y - DOC_OFFSET.Y;
+  Dim1.X := Dim1.X - DOC_OFFSET.X;
+  Dim1.Y := Dim1.Y - DOC_OFFSET.Y;
+  Dim3.X := Dim3.X - DOC_OFFSET.X;
+  Dim3.Y := Dim3.Y - DOC_OFFSET.Y;
+  Dim4.X := Dim4.X - DOC_OFFSET.X;
+  Dim4.Y := Dim4.Y - DOC_OFFSET.Y;
+  Dim5.X := Dim5.X - DOC_OFFSET.X;
+  Dim5.Y := Dim5.Y - DOC_OFFSET.Y;
+  Dim6.X := Dim6.X - DOC_OFFSET.X;
+  Dim6.Y := Dim6.Y - DOC_OFFSET.Y;
+
+  // Standard value meaning
+  DimensionRight := Dim0;
+  BaseRight := Dim3;
+  BaseLeft := Dim4;
 
   // And now write it
   {$ifdef FPVECTORIALDEBUG}
 //  WriteLn(Format('Adding Line from %f,%f to %f,%f', [LineStartX, LineStartY, LineEndX, LineEndY]));
   {$endif}
-  if IsAlignedDimension then
+  // -----------------------------------------------
+  // Aligned dimension
+  // -----------------------------------------------
+  if DXFDimensionType = ddtAligned then
   begin
     // Now make sure that we actually that BaseLeft is to the left of BaseRight
     if BaseRight.X < BaseLeft.X then
@@ -1396,27 +1424,92 @@ begin
 
     Result := AData.AddAlignedDimension(BaseLeft, BaseRight, DimensionLeft, DimensionRight, AOnlyCreate);
   end
+  // -----------------------------------------------
   // Radius and Diameters are very similar
-  else if IsRadialDimension or IsDiametricDimension then
+  // -----------------------------------------------
+  else if DXFDimensionType in [ddtRadial, ddtDiametric] then
   begin
-    if IsRadialDimension then
+    if DXFDimensionType = ddtRadial then
     begin
-      lCenter.X := DimensionRight.X;
-      lCenter.Y := DimensionRight.Y;
-      DimensionLeft.X := Dim5.X;
-      DimensionLeft.Y := Dim5.Y;
+      lCenter := DimensionRight;
+      DimensionLeft := Dim5;
     end
     else
     begin
-      lCenter.X := Dim1.X;
-      lCenter.Y := Dim1.Y;
-      DimensionLeft.X := Dim5.X;
-      DimensionLeft.Y := Dim5.Y;
+      lCenter := Dim1;
+      DimensionLeft := Dim5;
       DimensionRight.X := DimensionRight.X;
       DimensionRight.Y := DimensionRight.Y;
     end;
 
-    Result := AData.AddRadialDimension(IsDiametricDimension, lCenter, DimensionLeft, DimensionRight, AOnlyCreate);
+    Result := AData.AddRadialDimension(DXFDimensionType = ddtDiametric, lCenter, DimensionLeft, DimensionRight, AOnlyCreate);
+  end
+  // -----------------------------------------------
+  // A arc dimension
+  // -----------------------------------------------
+  else if DXFDimensionType = ddt2LineAngular then
+  begin
+    lCenter := Dim6;
+    lTextPos := Dim1;
+
+    // Sometimes Dim0 and Dim3 are the base, but sometimes Dim4 and Dim5 are the base!
+    // So we need to check which points are nearer o.O
+    // I plotted the given points to come to this conclusion
+    // and it doesn't match the provided example image:
+    // http://docs.autodesk.com/ACD/2013/RUS/images/GUID-E2F42FD3-2684-4F50-88A9-3AF3A5824FF1-low.png
+    // but it works. The pairs of points in the same line are 3,4 and 0,5
+    if Abs(Dim0.X-Dim3.X)+Abs(Dim0.Y-Dim3.Y) < Abs(Dim5.X-Dim4.X)+Abs(Dim5.Y-Dim4.Y) then
+    begin
+      BaseLeft := Dim0;
+      BaseRight := Dim3;
+      TmpDimensionLeft := Dim5;
+      TmpDimensionRight := Dim4;
+    end
+    else
+    begin
+      BaseLeft := Dim4;
+      BaseRight := Dim5;
+      TmpDimensionLeft := Dim3;
+      TmpDimensionRight := Dim0;
+    end;
+
+    // Calculate where the arc hits the left and right lines to obtain DimensionLeft and DimensionRight
+    // Left line is: Y = al.X + bl
+    // Circle equation for the arc is (X - BaseLeft.X)^2 + (Y - BaseLeft.Y)^2 = R^2
+    // This goes to a second degree equation of ae * X^2 + be * X + ce = 0
+    lAngleLeft := arctan(Abs(BaseLeft.Y-TmpDimensionLeft.Y)/Abs(BaseLeft.X-TmpDimensionLeft.X));
+    if TmpDimensionLeft.X<BaseLeft.X then lAngleLeft := Pi-lAngleLeft;
+    lRadius := sqrt(sqr(lCenter.Y-BaseLeft.Y) + sqr(lCenter.X-BaseLeft.X));
+    al := Tan(lAngleLeft);
+    bl := BaseLeft.Y - al * BaseLeft.X;
+    ae := 1 + al*al;
+    be := -2 * BaseLeft.X + 2 * al * bl - 2 * al * BaseLeft.Y;
+    ce := sqr(BaseLeft.X)+bl*bl-2*bl*BaseLeft.Y+sqr(BaseLeft.Y)-lRadius*lRadius;
+    lBaskaraDelta := be*be-4*ae*ce;
+    // The equation has 2 solutions, get the one nearest to TmpDimension
+    DimensionLeft.X := (-be+sqrt(lBaskaraDelta)) / (2 * ae);
+    DimensionLeft.Y := (-be-sqrt(lBaskaraDelta)) / (2 * ae);
+    if Abs(DimensionLeft.X-TmpDimensionLeft.X)>Abs(DimensionLeft.Y-TmpDimensionLeft.X)then
+      DimensionLeft.X := DimensionLeft.Y;
+    DimensionLeft.Y := al * DimensionLeft.X + bl;
+
+    lAngleRight := arctan(Abs(BaseRight.Y-TmpDimensionRight.Y)/Abs(BaseRight.X-TmpDimensionRight.X));
+    if TmpDimensionRight.X<BaseRight.X then lAngleRight := Pi-lAngleRight;
+    al := Tan(lAngleRight);
+    bl := BaseRight.Y - al * BaseRight.X;
+    ae := 1 + al*al;
+    be := -2 * BaseRight.X + 2 * al * bl - 2 * al * BaseRight.Y;
+    ce := sqr(BaseRight.X)+bl*bl-2*bl*BaseRight.Y+sqr(BaseRight.Y)-lRadius*lRadius;
+    lBaskaraDelta := be*be-4*ae*ce;
+    // The equation has 2 solutions, get the one nearest to TmpDimension
+    DimensionRight.X := (-be+sqrt(lBaskaraDelta)) / (2 * ae);
+    DimensionRight.Y := (-be-sqrt(lBaskaraDelta)) / (2 * ae);
+    if Abs(DimensionRight.X-TmpDimensionRight.X)>Abs(DimensionRight.Y-TmpDimensionRight.X)then
+      DimensionRight.X := DimensionRight.Y;
+    DimensionRight.Y := al * DimensionRight.X + bl;
+
+    Result := AData.AddArcDimension(180*Abs(lAngleRight-lAngleLeft)/Pi,
+      lRadius, BaseLeft, BaseRight, DimensionLeft, DimensionRight, lTextPos, AOnlyCreate);
   end;
 end;
 
