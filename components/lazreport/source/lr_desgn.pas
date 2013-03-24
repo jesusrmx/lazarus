@@ -745,6 +745,13 @@ end;
 procedure TPaintSel.DrawOrInvalidateViewHandles(t: TfrView; aDraw:boolean);
 var
   Bullet: TGraphic;
+  bdx, bdy: Integer;
+
+  procedure UpdateBulletSize;
+  begin
+    bdx := Bullet.Width div 2;
+    bdy := Bullet.Height div 2;
+  end;
 
   procedure DrawPoint(x,y: Integer);
   var
@@ -752,10 +759,10 @@ var
   begin
     if aDraw then
       //fOwner.Canvas.EllipseC(x, y, 1, 1)
-      fOwner.Canvas.Draw(x-3, y-3, Bullet)
+      fOwner.Canvas.Draw(x-bdx, y-bdy, Bullet)
     else
     begin
-      r := rect(x-3,y-3,x+3,y+3);
+      r := rect(x-bdx,y-bdy,x+bdx+1,y+bdy+1);
       InvalidateRect(fOwner.Handle, @r, false);
     end;
   end;
@@ -769,6 +776,8 @@ begin
     //Pen.Width := 5;
     //Pen.Color := clSkyBlue;
     Bullet := fGreenBullet;
+    UpdateBulletSize;
+
     px := x + dx div 2;
     py := y + dy div 2;
 
@@ -783,14 +792,17 @@ begin
     if (dx>0) and (dy>0) then
     begin
 
-      if aDraw and (Objects.IndexOf(t) = fOwner.RightBottom) then
+      if aDraw and (Objects.IndexOf(t) = fOwner.RightBottom) then begin
         //Pen.Color := clMoneyGreen;
         Bullet := fBlueBullet;
+        UpdateBulletSize;
+      end;
       DrawPoint(x + dx, y + dy);
     end;
 
     //Pen.Color := clSkyBlue;
     Bullet := fGreenBullet;
+    UpdateBulletSize;
     if SelNum = 1 then
     begin
       if px>x then
@@ -1700,7 +1712,7 @@ begin
     {$IFDEF DebugLR}
     DebugLnEnter('Inserting a New Object INIT');
     {$ENDIF}
-    EnableEvents(false);
+    //EnableEvents(false);
     Mode := mdSelect;
     //DrawFocusRect(OldRect);
     fPaintSel.RemoveFocusRect;
@@ -1732,7 +1744,7 @@ begin
                     DebugLnExit('Inserting a new object DONE: GetUnusedBand=btNone');
                     DebugLnExit('TfrDesignerPage.MUp DONE: Inserting..');
                     {$ENDIF}
-                    EnableEvents;
+                    //EnableEvents;
                     Exit;
                   end;
                 end
@@ -1879,7 +1891,7 @@ begin
     DebugLnExit('Inserting a New Object DONE');
     DebugLnExit('TfrDesignerPage.MUp DONE: Inserting ...');
     {$ENDIF}
-    EnableEvents;
+    //EnableEvents;
     Exit;
   end;
   
@@ -2481,7 +2493,8 @@ begin
       Hr2:=t.GetClipRgn(rtExtended);
       CombineRgn(hr1, hr, hr2, RGN_OR);
       DeleteObject(Hr2);
-      Draw(10000, hr1);
+      InvalidateRgn(Handle, hr1, false);
+      //Draw(10000, hr1);
       DeleteObject(Hr);
       {$IFDEF DebugLR}
       DebugLn('MDown resizing 2');
@@ -7389,6 +7402,7 @@ end;
 initialization
 
   {$I fr_pencil.lrs}
+  {$I bullets.lrs}
 
   frDesigner:=nil;
   ProcedureInitDesigner:=@InitGlobalDesigner;
