@@ -171,9 +171,6 @@ type
     procedure CMMouseLeave(var {%H-}Message: TLMessage); message CM_MOUSELEAVE;
     procedure DClick(Sender: TObject);
     procedure MoveResize(Kx,Ky:Integer; UseFrames,AResize: boolean);
-
-    procedure NPDrawFocusRect;
-    procedure NPEraseFocusRect;
   protected
     procedure Paint; override;
     procedure WMEraseBkgnd(var {%H-}Message: TLMEraseBkgnd); message LM_ERASEBKGND;
@@ -1284,8 +1281,8 @@ begin
   end;
 
   if (Button = mbRight) and Down and RFlag then
-    NPEraseFocusRect;
-
+    DrawFocusRect(OldRect);
+  
   RFlag := False;
   DrawPage(dmSelection);
   Down := True;
@@ -1297,7 +1294,7 @@ begin
       RFlag := True;
       if Cursor = crCross then
       begin
-        NPEraseFocusRect;
+        DrawFocusRect(OldRect);
         RoundCoord(x, y);
         OldRect1 := OldRect;
       end;
@@ -1509,10 +1506,9 @@ begin
     DebugLnEnter('Inserting a New Object INIT');
     {$ENDIF}
     Mode := mdSelect;
+    DrawFocusRect(OldRect);
     if (OldRect.Left = OldRect.Right) and (OldRect.Top = OldRect.Bottom) then
-      OldRect := OldRect1
-    else
-      NPEraseFocusRect;
+      OldRect := OldRect1;
     NormalizeRect(OldRect);
     RFlag := False;
     ObjectInserted := True;
@@ -1675,7 +1671,7 @@ begin
         FDesigner.OB7.Down := True
     end
     else
-      NPDrawFocusRect;
+      DrawFocusRect(OldRect);
 
     {$IFDEF DebugLR}
     DebugLnExit('Inserting a New Object DONE');
@@ -1717,7 +1713,7 @@ begin
   // calculating which objects contains in frame (if user select it with mouse+Ctrl key)
   if RFlag then
   begin
-    NPEraseFocusRect;
+    DrawFocusRect(OldRect);
     RFlag := False;
     NormalizeRect(OldRect);
     for i := 0 to Objects.Count - 1 do
@@ -1875,7 +1871,7 @@ begin
 //          if not FDesigner.OB3.Down then
           FDesigner.GetDefaultSize(kx, ky);
           OldRect := Rect(x, y, x + kx, y + ky);
-          NPDrawFocusRect;
+          DrawFocusRect(OldRect);
         end;
         Cursor := crCross;
       end;
@@ -1902,7 +1898,7 @@ begin
         if not FDesigner.OB3.Down then
           FDesigner.GetDefaultSize(kx, ky);
         OldRect := Rect(x, y, x + kx, y + ky);
-        NPDrawFocusRect;
+        DrawFocusRect(OldRect);
       end;
       Cursor := crCross;
     end;
@@ -1914,10 +1910,10 @@ begin
 
   if (Mode = mdInsert) and not Down then
   begin
-    NPEraseFocusRect;
+    DrawFocusRect(OldRect);
     RoundCoord(x, y);
     OffsetRect(OldRect, x - OldRect.Left, y - OldRect.Top);
-    NPDrawFocusRect;
+    DrawFocusRect(OldRect);
     ShowSizes := True;
     FDesigner.UpdateStatus;
     ShowSizes := False;
@@ -1947,11 +1943,11 @@ begin
   //selecting a lot of objects
   if Down and RFlag then
   begin
-    NPEraseFocusRect;
+    DrawFocusRect(OldRect);
     if Cursor = crCross then
       RoundCoord(x, y);
     OldRect := Rect(OldRect.Left, OldRect.Top, x, y);
-    NPDrawFocusRect;
+    DrawFocusRect(OldRect);
     ShowSizes := True;
     if Cursor = crCross then
       FDesigner.UpdateStatus;
@@ -2348,21 +2344,11 @@ begin
   {$IFDEF LCLCarbon}Invalidate;{$endif}
 end;
 
-procedure TfrDesignerPage.NPDrawFocusRect;
-begin
-  DrawFocusRect(OldRect);
-end;
-
-procedure TfrDesignerPage.NPEraseFocusRect;
-begin
-  DrawFocusRect(OldRect);
-end;
-
 procedure TfrDesignerPage.CMMouseLeave(var Message: TLMessage);
 begin
   if (Mode = mdInsert) and not Down then
   begin
-    NPEraseFocusRect;
+    DrawFocusRect(OldRect);
     OffsetRect(OldRect, -10000, -10000);
   end;
 end;
