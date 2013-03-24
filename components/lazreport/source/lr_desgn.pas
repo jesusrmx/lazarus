@@ -133,7 +133,7 @@ type
     property SelectedObject:TObject read FSelectedObject;
   end;
 
-  TPaintTimeObj = class;
+  TPaintSel = class;
 
   { TfrDesignerPage }
 
@@ -153,7 +153,7 @@ type
     FDesigner: TfrDesignerForm;
     
     fOldFocusRect : TRect;
-    fPaintTime: TPaintTimeObj;
+    fPaintSel: TPaintSel;
     fPainting: boolean;
 
     procedure NormalizeRect(var r: TRect);
@@ -191,9 +191,9 @@ type
   TPaintTimeStatusItem = (ptsFocusRect, ptsSelection, ptsPainting);
   TPaintTimeStatus = set of TPaintTimeStatusItem;
 
-  { TPaintTimeObj }
+  { TPaintSel }
 
-  TPaintTimeObj=class
+  TPaintSel=class
   private
     fStatus: TPaintTimeStatus;
     fFocusRect: TRect;
@@ -681,9 +681,9 @@ begin
   DeleteObject(TR);
 end;
 
-{ TPaintTimeObj }
+{ TPaintSel }
 
-constructor TPaintTimeObj.Create(AOwner: TfrDesignerPage);
+constructor TPaintSel.Create(AOwner: TfrDesignerPage);
 begin
   inherited Create;
   fOwner := AOwner;
@@ -693,35 +693,35 @@ begin
   fGreenBullet.LoadFromLazarusResource('bulletgreen');
 end;
 
-procedure TPaintTimeObj.FocusRect(aRect: TRect);
+procedure TPaintSel.FocusRect(aRect: TRect);
 begin
   fFocusRect := aRect;
   Include(fStatus, ptsFocusRect);
   InvalidateFocusRect;
 end;
 
-procedure TPaintTimeObj.RemoveFocusRect;
+procedure TPaintSel.RemoveFocusRect;
 begin
   InvalidateFocusRect;
 end;
 
-procedure TPaintTimeObj.HideViewhandles(t: tfrView);
+procedure TPaintSel.HideViewhandles(t: tfrView);
 begin
   DrawOrInvalidateViewHandles(t, false);
 end;
 
-procedure TPaintTimeObj.DrawSelection;
+procedure TPaintSel.DrawSelection;
 begin
   Include(fStatus, ptsSelection);
   DrawOrInvalidateSelection(false);
 end;
 
-procedure TPaintTimeObj.InvalidateSelection;
+procedure TPaintSel.InvalidateSelection;
 begin
   DrawOrInvalidateSelection(false);
 end;
 
-procedure TPaintTimeObj.DrawOrInvalidateSelection(aDraw:boolean);
+procedure TPaintSel.DrawOrInvalidateSelection(aDraw:boolean);
 var
   i: Integer;
   t: TfrView;
@@ -737,12 +737,12 @@ begin
   end;
 end;
 
-procedure TPaintTimeObj.InvalidateFocusRect;
+procedure TPaintSel.InvalidateFocusRect;
 begin
   InvalidateFrame(fOwner.Handle, @fFocusRect, false, 1);
 end;
 
-procedure TPaintTimeObj.DrawOrInvalidateViewHandles(t: TfrView; aDraw:boolean);
+procedure TPaintSel.DrawOrInvalidateViewHandles(t: TfrView; aDraw:boolean);
 var
   Bullet: TGraphic;
 
@@ -810,7 +810,7 @@ begin
 
 end;
 
-procedure TPaintTimeObj.Paint;
+procedure TPaintSel.Paint;
 begin
   Include(fStatus, ptsPainting);
   if ptsFocusRect in FStatus then
@@ -843,7 +843,7 @@ begin
   Parent      := AOwner as TWinControl;
   Color       := clWhite;
   EnableEvents;
-  fPaintTime  := TPaintTimeObj.Create(self);
+  fPaintSel  := TPaintSel.Create(self);
 end;
 
 procedure TfrDesignerPage.Init;
@@ -884,7 +884,7 @@ procedure TfrDesignerPage.Paint;
 begin
   fPainting := true;
   Draw(10000, 0);
-  FPaintTime.Paint;
+  fPaintSel.Paint;
   fPainting := false;
 end;
 
@@ -1346,7 +1346,7 @@ begin
 
   if DrawMode=dmSelection then
   begin
-    fPaintTime.DrawSelection;
+    fPaintSel.DrawSelection;
     exit;
   end;
 
@@ -1470,11 +1470,11 @@ begin
 
   if (Button = mbRight) and Down and RFlag then
     //DrawFocusRect(OldRect);
-    fPaintTime.RemoveFocusRect;
+    fPaintSel.RemoveFocusRect;
   
   RFlag := False;
   //DrawPage(dmSelection);
-  fPaintTime.InvalidateSelection;
+  fPaintSel.InvalidateSelection;
   Down := True;
   DontChange := False;
   if Button = mbLeft then
@@ -1485,7 +1485,7 @@ begin
       if Cursor = crCross then
       begin
         //DrawFocusRect(OldRect);
-        fPaintTime.RemoveFocusRect;
+        fPaintSel.RemoveFocusRect;
         RoundCoord(x, y);
         OldRect1 := OldRect;
       end;
@@ -1498,7 +1498,7 @@ begin
       {$IFDEF DebugLR}
       DebugLnExit('TfrDesignerPage.MDown DONE: Ctrl+Left o cursor=crCross');
       {$ENDIF}
-      fPaintTime.DrawSelection;
+      fPaintSel.DrawSelection;
       Exit;
     end
     else if Cursor = crPencil then
@@ -1525,7 +1525,7 @@ begin
             {$IFDEF DebugLR}
             DebugLnExit('TfrDesignerPage.MDown DONE: Left + cursor=crPencil');
             {$ENDIF}
-            fPaintTime.DrawSelection;
+            fPaintSel.DrawSelection;
             Exit;
          end;
   end;
@@ -1585,7 +1585,7 @@ begin
         {$IFDEF DebugLR}
         DebugLnExit('TfrDesignerPage.MDown DONE: Deselection o no selection');
         {$ENDIF}
-        fPaintTime.DrawSelection;
+        fPaintSel.DrawSelection;
         Exit;
       end;
     end;
@@ -1612,7 +1612,7 @@ begin
   if Button = mbRight then
   begin
     //DrawPage(dmSelection);
-    fPaintTime.DrawSelection;
+    fPaintSel.DrawSelection;
     Down := False;
     GetCursorPos(p{%H-});
     //FDesigner.Popup1Popup(nil);
@@ -1703,7 +1703,7 @@ begin
     EnableEvents(false);
     Mode := mdSelect;
     //DrawFocusRect(OldRect);
-    fPaintTime.RemoveFocusRect;
+    fPaintSel.RemoveFocusRect;
     if (OldRect.Left = OldRect.Right) and (OldRect.Top = OldRect.Bottom) then
       OldRect := OldRect1;
     NormalizeRect(OldRect);
@@ -1804,7 +1804,7 @@ begin
         end;
       end;
 
-      fPaintTime.InvalidateSelection;
+      fPaintSel.InvalidateSelection;
       FDesigner.Unselect;
       t.x := OldRect.Left;
       t.y := OldRect.Top;
@@ -1849,7 +1849,7 @@ begin
         t.Draw(Canvas);
         //DrawSelection(t);
       end;
-      fPaintTime.DrawSelection;
+      fPaintSel.DrawSelection;
       
       with FDesigner do
       begin
@@ -1873,7 +1873,7 @@ begin
     end
     else
       //DrawFocusRect(OldRect);
-      fPaintTime.RemoveFocusRect;
+      fPaintSel.RemoveFocusRect;
 
     {$IFDEF DebugLR}
     DebugLnExit('Inserting a New Object DONE');
@@ -1905,7 +1905,7 @@ begin
     SelNum := 1;
     t.Draw(Canvas);
     //DrawSelection(t);
-    fPaintTime.DrawSelection;
+    fPaintSel.DrawSelection;
     FDesigner.SelectionChanged;
     FDesigner.AddUndoAction(acInsert);
     {$IFDEF DebugLR}
@@ -1917,7 +1917,7 @@ begin
   // calculating which objects contains in frame (if user select it with mouse+Ctrl key)
   if RFlag then
   begin
-    fPaintTime.RemoveFocusRect;
+    fPaintSel.RemoveFocusRect;
     //DrawFocusRect(OldRect);
     RFlag := False;
     NormalizeRect(OldRect);
@@ -1940,7 +1940,7 @@ begin
     GetMultipleSelected;
     FDesigner.SelectionChanged;
     //DrawPage(dmSelection);
-    fPaintTime.DrawSelection;
+    fPaintSel.DrawSelection;
     {$IFDEF DebugLR}
     DebugLnExit('TfrDesignerPage.MUp DONE: objects contained in frame');
     {$ENDIF}
@@ -1962,7 +1962,7 @@ begin
     end;
     GetMultipleSelected;
     //Draw(TopSelected, ClipRgn);
-    fPaintTime.DrawSelection;
+    fPaintSel.DrawSelection;
     {$IFDEF DebugLR}
     DebugLnExit('TfrDesignerPage.MUp DONE: Splitting');
     {$ENDIF}
@@ -1973,7 +1973,7 @@ begin
   if Moved and MRFlag and (Cursor <> crDefault) then
   begin
     //Draw(TopSelected, ClipRgn);
-    fPaintTime.DrawSelection;
+    fPaintSel.DrawSelection;
     {$IFDEF DebugLR}
     DebugLnExit('TfrDesignerPage.MUp DONE: resizing several objects');
     {$ENDIF}
@@ -1983,7 +1983,7 @@ begin
   //redrawing all moved or resized objects
   if not Moved then
   begin
-    fPaintTime.DrawSelection;
+    fPaintSel.DrawSelection;
     //DrawPage(dmSelection);
     {$IFDEF DebugLR}
     DebugLn('redrawing all moved or resized objects');
@@ -1996,7 +1996,7 @@ begin
     begin
       //JRA DebugLn('HERE, ClipRgn', Dbgs(ClipRgn));
       //Draw(TopSelected, ClipRgn);
-      fPaintTime.DrawSelection;
+      fPaintSel.DrawSelection;
       GetMultipleSelected;
       FDesigner.ShowPosition;
     end
@@ -2007,7 +2007,7 @@ begin
       if Cursor <> crDefault then
         t.Resized;
       //Draw(TopSelected, ClipRgn);
-      fPaintTime.DrawSelection;
+      fPaintSel.DrawSelection;
       FDesigner.ShowPosition;
     end;
   end;
@@ -2083,7 +2083,7 @@ begin
           FDesigner.GetDefaultSize(kx, ky);
           OldRect := Rect(x, y, x + kx, y + ky);
           //DrawFocusRect(OldRect);
-          fPaintTime.FocusRect(OldRect);
+          fPaintSel.FocusRect(OldRect);
         end;
         Cursor := crCross;
       end;
@@ -2111,7 +2111,7 @@ begin
           FDesigner.GetDefaultSize(kx, ky);
         OldRect := Rect(x, y, x + kx, y + ky);
         //DrawFocusRect(OldRect);
-        fPaintTime.FocusRect(OldRect);
+        fPaintSel.FocusRect(OldRect);
       end;
       Cursor := crCross;
     end;
@@ -2124,11 +2124,11 @@ begin
   if (Mode = mdInsert) and not Down then
   begin
     //DrawFocusRect(OldRect);
-    fPaintTime.RemoveFocusRect;
+    fPaintSel.RemoveFocusRect;
     RoundCoord(x, y);
     OffsetRect(OldRect, x - OldRect.Left, y - OldRect.Top);
     //DrawFocusRect(OldRect);
-    fPaintTime.FocusRect(OldRect);
+    fPaintSel.FocusRect(OldRect);
     ShowSizes := True;
     FDesigner.UpdateStatus;
     ShowSizes := False;
@@ -2159,12 +2159,12 @@ begin
   if Down and RFlag then
   begin
     //DrawFocusRect(OldRect);
-    fPaintTime.RemoveFocusRect;
+    fPaintSel.RemoveFocusRect;
     if Cursor = crCross then
       RoundCoord(x, y);
     OldRect := Rect(OldRect.Left, OldRect.Top, x, y);
     //DrawFocusRect(OldRect);
-    fPaintTime.FocusRect(OldRect);
+    fPaintSel.FocusRect(OldRect);
     ShowSizes := True;
     if Cursor = crCross then
       FDesigner.UpdateStatus;
@@ -2587,7 +2587,7 @@ begin
   if (Mode = mdInsert) and not Down then
   begin
     //DrawFocusRect(OldRect);
-    fPaintTime.RemoveFocusRect;
+    fPaintSel.RemoveFocusRect;
     OffsetRect(OldRect, -10000, -10000);
   end;
 end;
