@@ -188,7 +188,7 @@ type
     procedure GetMultipleSelected;
   end;
 
-  TPaintTimeStatusItem = (ptsFocusRect, ptsSelection, ptsPainting);
+  TPaintTimeStatusItem = (ptsFocusRect, ptsSelection);
   TPaintTimeStatus = set of TPaintTimeStatusItem;
 
   { TPaintSel }
@@ -824,7 +824,6 @@ end;
 
 procedure TPaintSel.Paint;
 begin
-  Include(fStatus, ptsPainting);
   if ptsFocusRect in FStatus then
   begin
     fOwner.Canvas.Pen.Style:=psDot;
@@ -838,7 +837,6 @@ begin
     DrawOrInvalidateSelection(true);
     Exclude(Fstatus, ptsSelection);
   end;
-  Exclude(FStatus, ptsPainting);
 end;
 
 {----------------------------------------------------------------------------}
@@ -1358,7 +1356,8 @@ begin
 
   if DrawMode=dmSelection then
   begin
-    fPaintSel.DrawSelection;
+    if not fPainting then
+      fPaintSel.DrawSelection;
     exit;
   end;
 
