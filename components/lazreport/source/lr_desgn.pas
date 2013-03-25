@@ -16,6 +16,8 @@ interface
 {.$Define ExtOI} // External Custom Object inspector (Christian)
 {.$Define StdOI} // External Standard Object inspector (Jesus)
 {$define sbod}  // status bar owner draw
+{$define ppaint}
+{$define ppaint_persistent}
 uses
   Classes, SysUtils, FileUtil, LResources, LMessages,
   Forms, Controls, Graphics, Dialogs,ComCtrls,
@@ -736,8 +738,13 @@ end;
 
 procedure TPaintSel.PaintSelection;
 begin
-  // this assume we are in paint event
+  {$ifdef ppaint_persistent}
+  // paint directly
   DrawOrInvalidateSelection(true);
+  {$else}
+  // queue paint
+  DrawSelection;
+  {$endif}
 end;
 
 procedure TPaintSel.DrawOrInvalidateSelection(aDraw:boolean);
@@ -851,11 +858,13 @@ begin
     fOwner.Canvas.Rectangle(fFocusRect);
     Exclude(Fstatus, ptsFocusRect);
   end;
+  {$ifndef ppaint_persistent}
   if ptsSelection in fStatus then
   begin
     DrawOrInvalidateSelection(true);
     Exclude(Fstatus, ptsSelection);
   end;
+  {$endif}
 end;
 
 {----------------------------------------------------------------------------}
