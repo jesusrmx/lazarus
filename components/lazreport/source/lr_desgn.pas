@@ -1985,8 +1985,6 @@ begin
       end;
     end;
     GetMultipleSelected;
-    //Draw(TopSelected, ClipRgn);
-    fPaintSel.DrawSelection;
     NPDrawLayerObjects(ClipRgn, TopSelected);
     {$IFDEF DebugLR}
     DebugLnExit('TfrDesignerPage.MUp DONE: Splitting');
@@ -1997,8 +1995,6 @@ begin
   //resizing several objects
   if Moved and MRFlag and (Cursor <> crDefault) then
   begin
-    //Draw(TopSelected, ClipRgn);
-    fPaintSel.DrawSelection;
     NPDrawLayerObjects(ClipRgn, TopSelected);
     {$IFDEF DebugLR}
     DebugLnExit('TfrDesignerPage.MUp DONE: resizing several objects');
@@ -2020,8 +2016,6 @@ begin
     if SelNum > 1 then
     begin
       //JRA DebugLn('HERE, ClipRgn', Dbgs(ClipRgn));
-      //Draw(TopSelected, ClipRgn);
-      fPaintSel.DrawSelection;
       NPDrawLayerObjects(ClipRgn, TopSelected);
       GetMultipleSelected;
       FDesigner.ShowPosition;
@@ -2032,8 +2026,6 @@ begin
       NormalizeCoord(t);
       if Cursor <> crDefault then
         t.Resized;
-      //Draw(TopSelected, ClipRgn);
-      fPaintSel.DrawSelection;
       NPDrawLayerObjects(ClipRgn, TopSelected);
       FDesigner.ShowPosition;
     end;
@@ -2339,10 +2331,6 @@ begin
       DrawPage(dmShape)
     else
     begin
-      InvalidateRgn(Handle, hr, false);
-      InvalidateRgn(Handle, hr1, false);
-      //Draw(10000, hr);
-      //Draw(10000, hr1);
       NPDrawLayerObjects(hr);
       NPDrawLayerObjects(hr1);
     end;
@@ -2504,8 +2492,6 @@ begin
       Hr2:=t.GetClipRgn(rtExtended);
       CombineRgn(hr1, hr, hr2, RGN_OR);
       DeleteObject(Hr2);
-      InvalidateRgn(Handle, hr1, false);
-      //Draw(10000, hr1);
       NPDrawLayerObjects(hr1);
       DeleteObject(Hr);
       {$IFDEF DebugLR}
@@ -2582,9 +2568,6 @@ begin
   begin
     CombineRgn(hr, hr, hr1, RGN_OR);
     DeleteObject(hr1);
-    InvalidateRgn(Handle, hr, false);
-    //Draw(10000, hr);
-
     NPDrawLayerObjects(hr);
   end;
   {$IFDEF LCLQt}Invalidate;{$endif}
@@ -2630,7 +2613,26 @@ procedure TfrDesignerPage.NPDrawLayerObjects(Rgn: HRGN; Start:Integer=10000);
 begin
   // here one just have to invalidate Rgn and objects will be drawn normally
   // NOTE: this case, one needs to delete Rgn
+  {$ifdef ppaint}
+  // En la primer version, esto funcionaba correctamente
+  //
+  //fPaintSel.DrawSelection;
+  //
+  if Rgn = 0 then
+    with Canvas.ClipRect do
+      Rgn := CreateRectRgn(Left, Top, Right, Bottom);
+
+  InvalidateRgn(Handle, Rgn, false);
+
+  DeleteObject(Rgn);
+  if Rgn=ClipRgn then
+    ClipRgn := 0;
+
+  SelectClipRgn(Canvas.Handle, 0);
+
+  {$else}
   Draw(Start, Rgn);
+  {$endif}
 end;
 
 procedure TfrDesignerPage.NPDrawSelection;
@@ -3591,7 +3593,6 @@ end;
 
 procedure TfrDesignerForm.RedrawPage;
 begin
-  PageView.Draw(10000, 0);
   PageView.NPDrawLayerObjects(0);
 end;
 
@@ -4291,7 +4292,6 @@ begin
   end;
 
   if WithRedraw then
-    PageView.Draw(TopSelected, ClipRgn);
     PageView.NPDrawLayerObjects(ClipRgn, TopSelected);
 end;
 
@@ -4698,7 +4698,6 @@ begin
     end;
   end;
 
-  PageView.Draw(TopSelected, ClipRgn);
   PageView.NPDrawLayerObjects(ClipRgn, TopSelected);
 
   ActiveControl := nil;
@@ -5090,7 +5089,6 @@ begin
     View := TfrView(Objects[TopSelected]);
     if ShowEditor = mrOk then
     begin
-      PageView.Draw(TopSelected, View.GetClipRgn(rtExtended));
       PageView.NPDrawSelection;
       PageView.NPDrawLayerObjects(View.GetClipRgn(rtExtended), TopSelected);
     end;
@@ -5118,7 +5116,6 @@ begin
       begin
         AddUndoAction(acEdit);
         (t as TfrPictureView).Picture.Assign(Image1.Picture);
-        PageView.Draw(TopSelected, t.GetClipRgn(rtExtended));
         PageView.NPDrawSelection;
         PageView.NPDrawLayerObjects(t.GetClipRgn(rtExtended), TopSelected);
       end;
@@ -5149,7 +5146,6 @@ begin
     end
     else
       PageView.DFlag := False;
-    PageView.Draw(TopSelected, t.GetClipRgn(rtExtended));
     PageView.NPDrawLayerObjects(t.GetClipRgn(rtExtended), TopSelected);
   end
   else if t.Typ = gtSubReport then
@@ -5163,7 +5159,6 @@ begin
         begin
           PageView.NPEraseSelection;
           frAddIns[i].EditorForm.ShowEditor(t);
-          PageView.Draw(TopSelected, t.GetClipRgn(rtExtended));
           PageView.NPDrawLayerObjects(t.GetClipRgn(rtExtended), TopSelected);
         end
         else
@@ -5414,7 +5409,6 @@ end;
 
 procedure TfrDesignerForm.AfterChange;
 begin
-  PageView.Draw(TopSelected, 0);
   PageView.NPDrawSelection;
   PageView.NPDrawLayerObjects(0, TopSelected);
   ObjInspRefresh;
