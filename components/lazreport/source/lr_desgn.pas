@@ -16,7 +16,7 @@ interface
 {.$Define ExtOI} // External Custom Object inspector (Christian)
 {.$Define StdOI} // External Standard Object inspector (Jesus)
 {$define sbod}  // status bar owner draw
-{$define ppaint}
+{-$define ppaint}
 {$define ppaint_persistent}
 uses
   Classes, SysUtils, FileUtil, LResources, LMessages,
@@ -1379,14 +1379,14 @@ var
   t: TfrView;
 begin
   if DocMode <> dmDesigning then Exit;
-
+  {$ifdef ppaint}
   if DrawMode=dmSelection then
   begin
     if not fPainting then
       fPaintSel.DrawSelection;
     exit;
   end;
-
+  {$endif}
   for i:=0 to Objects.Count-1 do
   begin
     t := TfrView(Objects[i]);
@@ -1532,7 +1532,9 @@ begin
       {$IFDEF DebugLR}
       DebugLnExit('TfrDesignerPage.MDown DONE: Ctrl+Left o cursor=crCross');
       {$ENDIF}
-      fPaintSel.DrawSelection;
+      {$ifdef ppaint}
+      NPDrawSelection;
+      {$endif}
       Exit;
     end
     else if Cursor = crPencil then
@@ -1559,7 +1561,9 @@ begin
             {$IFDEF DebugLR}
             DebugLnExit('TfrDesignerPage.MDown DONE: Left + cursor=crPencil');
             {$ENDIF}
-            fPaintSel.DrawSelection;
+            {$ifdef ppaint}
+            NPDrawSelection;
+            {$endif}
             Exit;
          end;
   end;
@@ -1619,7 +1623,9 @@ begin
         {$IFDEF DebugLR}
         DebugLnExit('TfrDesignerPage.MDown DONE: Deselection o no selection');
         {$ENDIF}
-        fPaintSel.DrawSelection;
+        {$ifdef ppaint}
+        NPDrawSelection;
+        {$endif}
         Exit;
       end;
     end;
@@ -1836,8 +1842,9 @@ begin
           OldRect := Rect(Left, Top, Left + dx, Top + dy);
         end;
       end;
-
-      fPaintSel.InvalidateSelection;
+      {$ifdef ppaint}
+      NPEraseSelection;
+      {$endif}
       FDesigner.Unselect;
       t.x := OldRect.Left;
       t.y := OldRect.Top;
