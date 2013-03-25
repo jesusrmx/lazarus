@@ -1494,8 +1494,6 @@ begin
     NPEraseFocusRect;
 
   RFlag := False;
-  //DrawPage(dmSelection);
-  fPaintSel.InvalidateSelection;
   NPEraseSelection;
   Down := True;
   DontChange := False;
@@ -2647,7 +2645,11 @@ end;
 
 procedure TfrDesignerPage.NPEraseSelection;
 begin
+  {$ifdef ppaint}
+  fPaintSel.InvalidateSelection;
+  {$else}
   DrawPage(dmSelection);
+  {$endif}
 end;
 
 procedure TfrDesignerPage.NPRedrawViewCheckBand(t: TfrView);
@@ -3749,7 +3751,6 @@ begin
           t := TfrView(Objects[TopSelected]);
           if not (ssAlt in Shift) then
           begin
-            PageView.DrawPage(dmSelection);
             PageView.NPEraseSelection;
             Unselect;
             SelNum := 1;
@@ -3780,7 +3781,6 @@ end;
 procedure TfrDesignerForm.MoveObjects(dx, dy: Integer; aResize: Boolean);
 begin
   AddUndoAction(acEdit);
-  PageView.DrawPage(dmSelection);
   PageView.NPEraseSelection;
   PageView.MoveResize(Dx,Dy, false, aResize);
   ShowPosition;
@@ -3803,7 +3803,6 @@ var
 begin
   AddUndoAction(acDelete);
   GetRegion; // JRA 3
-  PageView.DrawPage(dmSelection);
   PageView.NPEraseSelection;
   for i := Objects.Count - 1 downto 0 do
   begin
@@ -4197,7 +4196,6 @@ begin
     View := TfrView(TMenuItem(Sender).Tag);
     if Objects.IndexOf(View)>=0 then
     begin
-      PageView.DrawPage(dmSelection);
       PageView.NPEraseSelection;
       SelectSameClass(View);
       PageView.GetMultipleSelected;
@@ -4276,7 +4274,6 @@ begin
     AddUndoAction(acEdit);
 
   if WithRedraw then begin
-    PageView.DrawPage(dmSelection);
     PageView.NPEraseSelection;
     GetRegion;
   end;
@@ -4557,7 +4554,6 @@ begin
   if Busy then
     Exit;
   AddUndoAction(acEdit);
-  PageView.DrawPage(dmSelection);
   PageView.NPEraseSelection;
   GetRegion;
   b:=(Sender as TControl).Tag;
@@ -5127,7 +5123,6 @@ begin
   end
   else if t.Typ = gtBand then
   begin
-    PageView.DrawPage(dmSelection);
     PageView.NPEraseSelection;
     bt := (t as TfrBandView).BandType;
     if bt in [btMasterData, btDetailData, btSubDetailData] then
@@ -5162,7 +5157,6 @@ begin
       begin
         if frAddIns[i].EditorForm <> nil then
         begin
-          PageView.DrawPage(dmSelection);
           PageView.NPEraseSelection;
           frAddIns[i].EditorForm.ShowEditor(t);
           PageView.Draw(TopSelected, t.GetClipRgn(rtExtended));
@@ -5571,7 +5565,6 @@ end;
 
 procedure TfrDesignerForm.SelAllBClick(Sender: TObject); // select all
 begin
-  PageView.DrawPage(dmSelection);
   PageView.NPEraseSelection;
   SelectAll;
   PageView.GetMultipleSelected;
