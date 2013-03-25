@@ -1903,9 +1903,7 @@ begin
         FDesigner.OB7.Down := True
     end
     else
-      //DrawFocusRect(OldRect);
-      fPaintSel.RemoveFocusRect;
-      NPDrawFocusRect;
+      NPEraseFocusRect;
 
     {$IFDEF DebugLR}
     DebugLnExit('Inserting a New Object DONE');
@@ -2122,8 +2120,6 @@ begin
 //          if not FDesigner.OB3.Down then
           FDesigner.GetDefaultSize(kx, ky);
           OldRect := Rect(x, y, x + kx, y + ky);
-          //DrawFocusRect(OldRect);
-          fPaintSel.FocusRect(OldRect);
           NPDrawFocusRect;
         end;
         Cursor := crCross;
@@ -2151,8 +2147,6 @@ begin
         if not FDesigner.OB3.Down then
           FDesigner.GetDefaultSize(kx, ky);
         OldRect := Rect(x, y, x + kx, y + ky);
-        //DrawFocusRect(OldRect);
-        fPaintSel.FocusRect(OldRect);
         NPDrawFocusRect;
       end;
       Cursor := crCross;
@@ -2170,8 +2164,6 @@ begin
     NPEraseFocusRect;
     RoundCoord(x, y);
     OffsetRect(OldRect, x - OldRect.Left, y - OldRect.Top);
-    //DrawFocusRect(OldRect);
-    fPaintSel.FocusRect(OldRect);
     NPDrawFocusRect;
     ShowSizes := True;
     FDesigner.UpdateStatus;
@@ -2208,8 +2200,6 @@ begin
     if Cursor = crCross then
       RoundCoord(x, y);
     OldRect := Rect(OldRect.Left, OldRect.Top, x, y);
-    //DrawFocusRect(OldRect);
-    fPaintSel.FocusRect(OldRect);
     NPDrawFocusRect;
     ShowSizes := True;
     if Cursor = crCross then
@@ -2635,12 +2625,20 @@ end;
 
 procedure TfrDesignerPage.NPDrawFocusRect;
 begin
+  {$ifdef ppaint}
+  fPaintSel.FocusRect(OldRect);
+  {$else}
   DrawFocusRect(OldRect);
+  {$endif}
 end;
 
 procedure TfrDesignerPage.NPEraseFocusRect;
 begin
+  {$ifdef ppaint}
+  fPaintSel.RemoveFocusRect;
+  {$else}
   DrawFocusRect(OldRect);
+  {$endif}
 end;
 
 procedure TfrDesignerPage.NPDrawLayerObjects(Rgn: HRGN; Start:Integer=10000);
