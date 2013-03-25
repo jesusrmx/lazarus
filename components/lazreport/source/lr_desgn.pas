@@ -1993,7 +1993,8 @@ begin
   //resizing several objects
   if Moved and MRFlag and (Cursor <> crDefault) then
   begin
-    NPDrawLayerObjects(ClipRgn, TopSelected);
+    //NPDrawLayerObjects(ClipRgn, TopSelected);
+    NPDrawSelection;
     {$IFDEF DebugLR}
     DebugLnExit('TfrDesignerPage.MUp DONE: resizing several objects');
     {$ENDIF}
