@@ -16,7 +16,7 @@ interface
 {.$Define ExtOI} // External Custom Object inspector (Christian)
 {.$Define StdOI} // External Standard Object inspector (Jesus)
 {$define sbod}  // status bar owner draw
-{-$define ppaint}
+{$define ppaint}
 {$define ppaint_persistent}
 uses
   Classes, SysUtils, FileUtil, LResources, LMessages,
@@ -2014,7 +2014,8 @@ begin
     if SelNum > 1 then
     begin
       //JRA DebugLn('HERE, ClipRgn', Dbgs(ClipRgn));
-      NPDrawLayerObjects(ClipRgn, TopSelected);
+      //NPDrawLayerObjects(ClipRgn, TopSelected);
+      NPDrawSelection;
       GetMultipleSelected;
       FDesigner.ShowPosition;
     end
@@ -2024,7 +2025,8 @@ begin
       NormalizeCoord(t);
       if Cursor <> crDefault then
         t.Resized;
-      NPDrawLayerObjects(ClipRgn, TopSelected);
+      NPDrawSelection;
+      //NPDrawLayerObjects(ClipRgn, TopSelected);
       FDesigner.ShowPosition;
     end;
   end;
