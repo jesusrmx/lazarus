@@ -1860,21 +1860,6 @@ begin
       end;
       
       SelNum := 1;
-      if t.Typ = gtBand then
-      begin
-        {$IFDEF DebugLR}
-        DebugLn('A new band was inserted');
-        {$ENDIF}
-        //Draw(10000, t.GetClipRgn(rtExtended));
-        Invalidate;
-      end
-      else
-      begin
-        t.Draw(Canvas);
-        //DrawSelection(t);
-      end;
-      fPaintSel.DrawSelection;
-      
       NPRedrawViewCheckBand(t);
 
       with FDesigner do
@@ -1928,9 +1913,6 @@ begin
     t.FrameWidth := LastLineWidth;
     t.FrameColor := LastFrameColor;
     SelNum := 1;
-    t.Draw(Canvas);
-    //DrawSelection(t);
-    fPaintSel.DrawSelection;
     NPRedrawViewCheckBand(t);
     FDesigner.SelectionChanged;
     FDesigner.AddUndoAction(acInsert);
@@ -2664,6 +2646,16 @@ end;
 
 procedure TfrDesignerPage.NPRedrawViewCheckBand(t: TfrView);
 begin
+  {$ifdef ppaint}
+  // En la primer version, esto funcionaba correctamente
+  //
+  //fPaintSel.DrawSelection;
+  //
+  if t.typ = gtBand then
+    NPDrawLayerObjects(t.GetClipRgn(rtExtended))
+  else
+    fPaintSel.DrawSelection;
+  {$else}
   if t.Typ = gtBand then
   begin
     {$IFDEF DebugLR}
@@ -2676,6 +2668,7 @@ begin
     t.Draw(Canvas);
     DrawSelection(t);
   end;
+  {$endif}
 end;
 
 procedure TfrDesignerPage.CMMouseLeave(var Message: TLMessage);
