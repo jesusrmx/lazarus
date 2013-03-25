@@ -1630,8 +1630,6 @@ begin
   
   if Button = mbRight then
   begin
-    //DrawPage(dmSelection);
-    fPaintSel.DrawSelection;
     NPDrawSelection;
     Down := False;
     GetCursorPos(p{%H-});
@@ -1960,8 +1958,6 @@ begin
     end;
     GetMultipleSelected;
     FDesigner.SelectionChanged;
-    //DrawPage(dmSelection);
-    fPaintSel.DrawSelection;
     NPDrawSelection;
     {$IFDEF DebugLR}
     DebugLnExit('TfrDesignerPage.MUp DONE: objects contained in frame');
@@ -2007,8 +2003,6 @@ begin
   //redrawing all moved or resized objects
   if not Moved then
   begin
-    fPaintSel.DrawSelection;
-    //DrawPage(dmSelection);
     NPDrawSelection;
     {$IFDEF DebugLR}
     DebugLn('redrawing all moved or resized objects');
@@ -2635,7 +2629,12 @@ end;
 
 procedure TfrDesignerPage.NPDrawSelection;
 begin
+  {$ifdef ppaint}
+  //DrawPage(dmSelection);
+  fPaintSel.DrawSelection;
+  {$else}
   DrawPage(dmSelection);
+  {$endif}
 end;
 
 procedure TfrDesignerPage.NPPaintSelection;
@@ -3755,7 +3754,6 @@ begin
             Unselect;
             SelNum := 1;
             t1.Selected := True;
-            PageView.DrawPage(dmSelection);
             PageView.NPDrawSelection;
           end
           else
@@ -4199,7 +4197,6 @@ begin
       PageView.NPEraseSelection;
       SelectSameClass(View);
       PageView.GetMultipleSelected;
-      PageView.DrawPage(dmSelection);
       PageView.NPDrawSelection;
       SelectionChanged;
     end;
@@ -5084,7 +5081,6 @@ begin
     View := TfrView(Objects[TopSelected]);
     if ShowEditor = mrOk then
     begin
-      PageView.DrawPage(dmSelection);
       PageView.Draw(TopSelected, View.GetClipRgn(rtExtended));
       PageView.NPDrawSelection;
       PageView.NPDrawLayerObjects(View.GetClipRgn(rtExtended), TopSelected);
@@ -5112,7 +5108,6 @@ begin
       if ShowModal = mrOk then
       begin
         AddUndoAction(acEdit);
-        PageView.DrawPage(dmSelection);
         (t as TfrPictureView).Picture.Assign(Image1.Picture);
         PageView.Draw(TopSelected, t.GetClipRgn(rtExtended));
         PageView.NPDrawSelection;
@@ -5410,7 +5405,6 @@ end;
 
 procedure TfrDesignerForm.AfterChange;
 begin
-  PageView.DrawPage(dmSelection);
   PageView.Draw(TopSelected, 0);
   PageView.NPDrawSelection;
   PageView.NPDrawLayerObjects(0, TopSelected);
@@ -5568,7 +5562,6 @@ begin
   PageView.NPEraseSelection;
   SelectAll;
   PageView.GetMultipleSelected;
-  PageView.DrawPage(dmSelection);
   PageView.NPDrawSelection;
   SelectionChanged;
 end;
