@@ -222,6 +222,7 @@ type
     procedure HideViewhandles(t:tfrView);
     procedure DrawSelection;
     procedure InvalidateSelection;
+    procedure PaintSelection;
     procedure Paint;
   end;
 
@@ -731,6 +732,12 @@ end;
 procedure TPaintSel.InvalidateSelection;
 begin
   DrawOrInvalidateSelection(false);
+end;
+
+procedure TPaintSel.PaintSelection;
+begin
+  // this assume we are in paint event
+  DrawOrInvalidateSelection(true);
 end;
 
 procedure TPaintSel.DrawOrInvalidateSelection(aDraw:boolean);
@@ -1350,7 +1357,6 @@ begin
   SelectClipRgn(Canvas.Handle, 0);
 
   if not Down then
-    DrawPage(dmSelection);
     NPPaintSelection;
 
   {$IFDEF DebugLR}
@@ -2630,7 +2636,6 @@ end;
 procedure TfrDesignerPage.NPDrawSelection;
 begin
   {$ifdef ppaint}
-  //DrawPage(dmSelection);
   fPaintSel.DrawSelection;
   {$else}
   DrawPage(dmSelection);
@@ -2639,7 +2644,11 @@ end;
 
 procedure TfrDesignerPage.NPPaintSelection;
 begin
+  {$ifdef ppaint}
+  fPaintSel.PaintSelection;
+  {$else}
   DrawPage(dmSelection);
+  {$endif}
 end;
 
 procedure TfrDesignerPage.NPEraseSelection;
