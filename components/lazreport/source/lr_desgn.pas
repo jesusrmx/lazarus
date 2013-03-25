@@ -6804,6 +6804,7 @@ begin
   b.Height:= 16;
   with b.Canvas do
   begin
+    b.Canvas.Handle;  // force handle creation
     Brush.Color:=clWhite;
     FillRect(ClipRect);
     r := Rect(n * 32, 0, n * 32 + 32, 16);
