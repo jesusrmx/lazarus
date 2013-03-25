@@ -1491,9 +1491,6 @@ begin
   end;
 
   if (Button = mbRight) and Down and RFlag then
-    //DrawFocusRect(OldRect);
-    fPaintSel.RemoveFocusRect;
-  
     NPEraseFocusRect;
 
   RFlag := False;
@@ -1509,8 +1506,6 @@ begin
       RFlag := True;
       if Cursor = crCross then
       begin
-        //DrawFocusRect(OldRect);
-        fPaintSel.RemoveFocusRect;
         NPEraseFocusRect;
         RoundCoord(x, y);
         OldRect1 := OldRect;
@@ -1729,8 +1724,6 @@ begin
     {$ENDIF}
     //EnableEvents(false);
     Mode := mdSelect;
-    //DrawFocusRect(OldRect);
-    fPaintSel.RemoveFocusRect;
     if (OldRect.Left = OldRect.Right) and (OldRect.Top = OldRect.Bottom) then
       OldRect := OldRect1
     else
@@ -1948,8 +1941,6 @@ begin
   // calculating which objects contains in frame (if user select it with mouse+Ctrl key)
   if RFlag then
   begin
-    fPaintSel.RemoveFocusRect;
-    //DrawFocusRect(OldRect);
     NPEraseFocusRect;
     RFlag := False;
     NormalizeRect(OldRect);
@@ -2159,8 +2150,6 @@ begin
 
   if (Mode = mdInsert) and not Down then
   begin
-    //DrawFocusRect(OldRect);
-    fPaintSel.RemoveFocusRect;
     NPEraseFocusRect;
     RoundCoord(x, y);
     OffsetRect(OldRect, x - OldRect.Left, y - OldRect.Top);
@@ -2194,8 +2183,6 @@ begin
   //selecting a lot of objects
   if Down and RFlag then
   begin
-    //DrawFocusRect(OldRect);
-    fPaintSel.RemoveFocusRect;
     NPEraseFocusRect;
     if Cursor = crCross then
       RoundCoord(x, y);
@@ -2683,8 +2670,6 @@ procedure TfrDesignerPage.CMMouseLeave(var Message: TLMessage);
 begin
   if (Mode = mdInsert) and not Down then
   begin
-    //DrawFocusRect(OldRect);
-    fPaintSel.RemoveFocusRect;
     NPEraseFocusRect;
     OffsetRect(OldRect, -10000, -10000);
   end;
