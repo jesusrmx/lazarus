@@ -196,6 +196,7 @@ type
     procedure DoContextPopup(MousePos: TPoint; var Handled: Boolean); override;
   public
     constructor Create(AOwner: TComponent); override;
+    destructor destroy; override;
 
     procedure Init;
     procedure SetPage;
@@ -890,6 +891,12 @@ begin
   Color       := clWhite;
   EnableEvents;
   fPaintSel  := TPaintSel.Create(self);
+end;
+
+destructor TfrDesignerPage.destroy;
+begin
+  fPaintSel.Free;
+  inherited destroy;
 end;
 
 procedure TfrDesignerPage.Init;
