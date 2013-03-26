@@ -6287,6 +6287,16 @@ begin
     GTKAPIWidget_InvalidateCaret(PGTKAPIWidget(Widget));
 end;
 
+function TGtk2WidgetSet.InvalidateRgn(Handle: HWND; Rgn: HRGN; Erase: Boolean
+  ): Boolean;
+var
+  R: TRect;
+begin
+  // TODO: use gdk_window_invalidate_region to implement this function
+  GetRgnBox(Rgn, @R);
+  InvalidateRect(Handle, @R, Erase);
+end;
+
 function TGtk2WidgetSet.IsIconic(handle: HWND): boolean;
 var
   GtkWindow: PGtkWindow absolute handle;
