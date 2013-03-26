@@ -219,6 +219,7 @@ type
     procedure DrawOrInvalidateSelection(aDraw:boolean);
   public
     constructor Create(AOwner: TfrDesignerPage);
+    destructor Destroy; override;
     procedure FocusRect(aRect:TRect);
     procedure RemoveFocusRect;
     procedure HideViewhandles(t:tfrView);
@@ -706,6 +707,13 @@ begin
   fBlueBullet := TPortableNetworkGraphic.Create;
   fBlueBullet.LoadFromLazarusResource('bulletblue');
   fGreenBullet.LoadFromLazarusResource('bulletgreen');
+end;
+
+destructor TPaintSel.Destroy;
+begin
+  fGreenBullet.Free;
+  fBlueBullet.Free;
+  inherited Destroy;
 end;
 
 procedure TPaintSel.FocusRect(aRect: TRect);
