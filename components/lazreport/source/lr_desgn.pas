@@ -18,6 +18,7 @@ interface
 {$define sbod}  // status bar owner draw
 {$define ppaint}
 {$define ppaint_persistent}
+{-$define DebugLR}
 uses
   Classes, SysUtils, FileUtil, LResources, LMessages,
   Forms, Controls, Graphics, Dialogs,ComCtrls,
@@ -2041,8 +2042,8 @@ begin
       NormalizeCoord(t);
       if Cursor <> crDefault then
         t.Resized;
-      NPDrawSelection;
-      //NPDrawLayerObjects(ClipRgn, TopSelected);
+      //NPDrawSelection;
+      NPDrawLayerObjects(ClipRgn, TopSelected);
       FDesigner.ShowPosition;
     end;
   end;
@@ -2371,6 +2372,9 @@ begin
       {$ENDIF}
       Exit;
     end;
+    {$IFDEF DebugLn}
+    DebugLn('Moving kx=%d ky=%d',[kx,ky]);
+    {$ENDIF}
     if FirstBandMove and (SelNum = 1) and ((kx <> 0) or (ky <> 0)) and
       not (ssAlt in Shift) then
     begin
