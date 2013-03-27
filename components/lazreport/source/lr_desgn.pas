@@ -2009,8 +2009,13 @@ begin
   //resizing several objects
   if Moved and MRFlag and (Cursor <> crDefault) then
   begin
-    //NPDrawLayerObjects(ClipRgn, TopSelected);
+    {$ifdef ppaint}
     NPDrawSelection;
+    DeleteObject(ClipRgn);
+    ClipRgn:=0;
+    {$else}
+    NPDrawLayerObjects(ClipRgn, TopSelected);
+    {$endif}
     {$IFDEF DebugLR}
     DebugLnExit('TfrDesignerPage.MUp DONE: resizing several objects');
     {$ENDIF}
@@ -2031,8 +2036,13 @@ begin
     if SelNum > 1 then
     begin
       //JRA DebugLn('HERE, ClipRgn', Dbgs(ClipRgn));
-      //NPDrawLayerObjects(ClipRgn, TopSelected);
+      {$ifdef ppaint}
       NPDrawSelection;
+      DeleteObject(ClipRgn);
+      ClipRgn:=0;
+      {$else}
+      NPDrawLayerObjects(ClipRgn, TopSelected);
+      {$endif}
       GetMultipleSelected;
       FDesigner.ShowPosition;
     end
@@ -2042,8 +2052,13 @@ begin
       NormalizeCoord(t);
       if Cursor <> crDefault then
         t.Resized;
-      //NPDrawSelection;
+      {$ifdef ppaint}
+      NPDrawSelection;
+      DeleteObject(ClipRgn);
+      ClipRgn:=0;
+      {$else}
       NPDrawLayerObjects(ClipRgn, TopSelected);
+      {$endif}
       FDesigner.ShowPosition;
     end;
   end;
@@ -2372,9 +2387,6 @@ begin
       {$ENDIF}
       Exit;
     end;
-    {$IFDEF DebugLn}
-    DebugLn('Moving kx=%d ky=%d',[kx,ky]);
-    {$ENDIF}
     if FirstBandMove and (SelNum = 1) and ((kx <> 0) or (ky <> 0)) and
       not (ssAlt in Shift) then
     begin
