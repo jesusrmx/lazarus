@@ -224,7 +224,6 @@ type
     destructor Destroy; override;
     procedure FocusRect(aRect:TRect);
     procedure RemoveFocusRect;
-    procedure HideViewhandles(t:tfrView);
     procedure DrawSelection;
     procedure InvalidateSelection;
     procedure PaintSelection;
@@ -728,11 +727,6 @@ end;
 procedure TPaintSel.RemoveFocusRect;
 begin
   InvalidateFocusRect;
-end;
-
-procedure TPaintSel.HideViewhandles(t: tfrView);
-begin
-  DrawOrInvalidateViewHandles(t, false);
 end;
 
 procedure TPaintSel.DrawSelection;
@@ -2643,13 +2637,8 @@ end;
 
 procedure TfrDesignerPage.NPDrawLayerObjects(Rgn: HRGN; Start:Integer=10000);
 begin
-  // here one just have to invalidate Rgn and objects will be drawn normally
-  // NOTE: this case, one needs to delete Rgn
   {$ifdef ppaint}
-  // En la primer version, esto funcionaba correctamente
-  //
-  //fPaintSel.DrawSelection;
-  //
+
   if Rgn = 0 then
     with Canvas.ClipRect do
       Rgn := CreateRectRgn(Left, Top, Right, Bottom);
