@@ -6246,6 +6246,21 @@ begin
     Rect^.Top := 0;//PaintWidget^.Allocation.Y;
     Rect^.Right := PaintWidget^.Allocation.Width;
     Rect^.Bottom := PaintWidget^.Allocation.Height;
+  end else
+  begin
+    // normalize rect
+    r := Rect^;
+    if r.Left>r.Right then
+    begin
+      r.Left := r.Right;
+      r.Right := Rect^.Left;
+    end;
+    if r.Top>r.Bottom then
+    begin
+      r.Top := r.Bottom;
+      r.Bottom := Rect^.Top;
+    end;
+    Rect := @r;
   end;
 
   gdkRect.X := Rect^.Left;
