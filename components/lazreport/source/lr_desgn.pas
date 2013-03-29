@@ -850,9 +850,10 @@ procedure TPaintSel.Paint;
 begin
   if ptsFocusRect in FStatus then
   begin
-    fOwner.Canvas.Pen.Style:=psDot;
-    fOwner.Canvas.Pen.Color:=clSkyBlue;
-    fOwner.Canvas.Brush.Style:=bsClear;
+    fOwner.Canvas.Brush.Style := bsSolid;
+    fOwner.Canvas.Pen.Style := psDot;
+    fOwner.Canvas.Pen.Color := clSkyBlue;
+    fOwner.Canvas.Brush.Style := bsClear;
     fOwner.Canvas.Rectangle(fFocusRect);
     Exclude(Fstatus, ptsFocusRect);
   end;
