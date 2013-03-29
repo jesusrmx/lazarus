@@ -214,7 +214,7 @@ type
     fStatus: TPaintTimeStatus;
     fFocusRect: TRect;
     fOwner: TfrDesignerPage;
-    fBlueBullet,fGreenBullet: TPortableNetworkGraphic;
+    fGreenBullet,fGrayBullet: TPortableNetworkGraphic;
   strict private
     procedure InvalidateFocusRect;
     procedure DrawOrInvalidateViewHandles(t:TfrView; aDraw:boolean);
@@ -705,15 +705,15 @@ begin
   inherited Create;
   fOwner := AOwner;
   fGreenBullet := TPortableNetworkGraphic.Create;
-  fBlueBullet := TPortableNetworkGraphic.Create;
-  fBlueBullet.LoadFromLazarusResource('bulletblue');
+  fGrayBullet := TPortableNetworkGraphic.Create;
   fGreenBullet.LoadFromLazarusResource('bulletgreen');
+  fGrayBullet.LoadFromLazarusResource('bulletgray');
 end;
 
 destructor TPaintSel.Destroy;
 begin
+  fGrayBullet.Free;
   fGreenBullet.Free;
-  fBlueBullet.Free;
   inherited Destroy;
 end;
 
@@ -777,8 +777,9 @@ var
   Bullet: TGraphic;
   bdx, bdy: Integer;
 
-  procedure UpdateBulletSize;
+  procedure UpdateBullet(aBullet: TGraphic);
   begin
+    Bullet := aBullet;
     bdx := Bullet.Width div 2;
     bdy := Bullet.Height div 2;
   end;
@@ -803,10 +804,10 @@ begin
 
   with t, fOwner.Canvas do
   begin
-    //Pen.Width := 5;
-    //Pen.Color := clSkyBlue;
-    Bullet := fGreenBullet;
-    UpdateBulletSize;
+    if SelNum>1 then
+      UpdateBullet(fGrayBullet)
+    else
+      UpdateBullet(fGreenBullet);
 
     px := x + dx div 2;
     py := y + dy div 2;
@@ -819,20 +820,6 @@ begin
     if dy>0 then
       DrawPoint(x, y + dy);
 
-    if (dx>0) and (dy>0) then
-    begin
-
-      if aDraw and (Objects.IndexOf(t) = fOwner.RightBottom) then begin
-        //Pen.Color := clMoneyGreen;
-        Bullet := fBlueBullet;
-        UpdateBulletSize;
-      end;
-      DrawPoint(x + dx, y + dy);
-    end;
-
-    //Pen.Color := clSkyBlue;
-    Bullet := fGreenBullet;
-    UpdateBulletSize;
     if SelNum = 1 then
     begin
       if px>x then
@@ -846,6 +833,13 @@ begin
         DrawPoint(px, y + dy);
         DrawPoint(x + dx, py);
       end;
+    end;
+
+    if (dx>0) and (dy>0) then
+    begin
+      if aDraw and (Objects.IndexOf(t) = fOwner.RightBottom) then
+        UpdateBullet(fGreenBullet);
+      DrawPoint(x + dx, y + dy);
     end;
 
   end;
