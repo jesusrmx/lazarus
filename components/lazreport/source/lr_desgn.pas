@@ -1732,8 +1732,6 @@ begin
     Exit;
   end;
 
-  //{$IFDEF LCLQt}Invalidate;{$endif}
-  //{$IFDEF LCLCarbon}Invalidate;{$endif}
   Down := False;
   if FDesigner.ShapeMode = smFrame then
     DrawPage(dmShape);
@@ -2593,8 +2591,6 @@ begin
     DeleteObject(hr1);
     NPDrawLayerObjects(hr);
   end;
-  {$IFDEF LCLQt}Invalidate;{$endif}
-  {$IFDEF LCLCarbon}Invalidate;{$endif}
 end;
 
 procedure TfrDesignerPage.EnableEvents(aOk: boolean);
