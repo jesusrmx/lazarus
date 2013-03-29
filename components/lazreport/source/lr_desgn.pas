@@ -213,7 +213,6 @@ type
     fFocusRect: TRect;
     fOwner: TfrDesignerPage;
     fGreenBullet,fGrayBullet: TPortableNetworkGraphic;
-  strict private
     procedure InvalidateFocusRect;
     procedure DrawOrInvalidateViewHandles(t:TfrView; aDraw:boolean);
     procedure DrawOrInvalidateSelection(aDraw:boolean);
@@ -222,7 +221,7 @@ type
     destructor Destroy; override;
     procedure FocusRect(aRect:TRect);
     procedure RemoveFocusRect;
-    procedure DrawSelection;
+    procedure InvalidateSelection;
     procedure PaintSelection;
     procedure Paint;
   end;
@@ -726,7 +725,7 @@ begin
   InvalidateFocusRect;
 end;
 
-procedure TPaintSel.DrawSelection;
+procedure TPaintSel.InvalidateSelection;
 begin
   DrawOrInvalidateSelection(false);
 end;
@@ -1370,7 +1369,7 @@ begin
   if DrawMode=dmSelection then
   begin
     if not fPainting then
-      fPaintSel.DrawSelection;
+      fPaintSel.InvalidateSelection;
     exit;
   end;
   {$endif}
@@ -2613,7 +2612,7 @@ end;
 procedure TfrDesignerPage.NPDrawLayerObjects(Rgn: HRGN; Start:Integer=10000);
 {$ifdef ppaint}
 var
-  R, R1: HRGN;
+  R: HRGN;
   t: TfrView;
   i: Integer;
 {$endif}
@@ -2649,7 +2648,7 @@ end;
 procedure TfrDesignerPage.NPDrawSelection;
 begin
   {$ifdef ppaint}
-  fPaintSel.DrawSelection;
+  fPaintSel.InvalidateSelection;
   {$else}
   DrawPage(dmSelection);
   {$endif}
@@ -2667,7 +2666,7 @@ end;
 procedure TfrDesignerPage.NPEraseSelection;
 begin
   {$ifdef ppaint}
-  fPaintSel.DrawSelection;
+  fPaintSel.InvalidateSelection;
   {$else}
   DrawPage(dmSelection);
   {$endif}
@@ -2676,14 +2675,10 @@ end;
 procedure TfrDesignerPage.NPRedrawViewCheckBand(t: TfrView);
 begin
   {$ifdef ppaint}
-  // En la primer version, esto funcionaba correctamente
-  //
-  //fPaintSel.DrawSelection;
-  //
   if t.typ = gtBand then
     NPDrawLayerObjects(t.GetClipRgn(rtExtended))
   else
-    fPaintSel.DrawSelection;
+    fPaintSel.InvalidateSelection;
   {$else}
   if t.Typ = gtBand then
   begin
