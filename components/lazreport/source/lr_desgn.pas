@@ -2027,7 +2027,8 @@ begin
       //JRA DebugLn('HERE, ClipRgn', Dbgs(ClipRgn));
       {$ifdef ppaint}
       NPDrawSelection;
-      DeleteObject(ClipRgn);
+      if ClipRgn<>0 then
+        DeleteObject(ClipRgn);
       ClipRgn:=0;
       {$else}
       NPDrawLayerObjects(ClipRgn, TopSelected);
@@ -2043,7 +2044,8 @@ begin
         t.Resized;
       {$ifdef ppaint}
       NPDrawSelection;
-      DeleteObject(ClipRgn);
+      if ClipRgn<>0 then
+        DeleteObject(ClipRgn);
       ClipRgn:=0;
       {$else}
       NPDrawLayerObjects(ClipRgn, TopSelected);
