@@ -2631,12 +2631,27 @@ begin
 end;
 
 procedure TfrDesignerPage.NPDrawLayerObjects(Rgn: HRGN; Start:Integer=10000);
+{$ifdef ppaint}
+var
+  R, R1: HRGN;
+  t: TfrView;
+  i: Integer;
+{$endif}
 begin
   {$ifdef ppaint}
-
   if Rgn = 0 then
-    with Canvas.ClipRect do
-      Rgn := CreateRectRgn(Left, Top, Right, Bottom);
+  begin
+    // here just make sure all objects, starting at Start
+    // are invalidated so in next paint cycle they are drawn
+    Rgn := CreateRectRgn(0, 0, 0, 0);
+    for i := Objects.Count-1 downto 0 do
+    if i<=Start then begin
+      t := TfrView(Objects[i]);
+      R := t.GetClipRgn(rtNormal);
+      CombineRgn(Rgn, Rgn, R, RGN_OR);
+      DeleteObject(R);
+    end;
+  end;
 
   InvalidateRgn(Handle, Rgn, false);
 
