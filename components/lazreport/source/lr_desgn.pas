@@ -768,8 +768,12 @@ begin
 end;
 
 procedure TPaintSel.InvalidateFocusRect;
+var
+  R: TRect;
 begin
-  InvalidateFrame(fOwner.Handle, @fFocusRect, false, 1);
+  R := fFocusRect;
+  fOwner.NormalizeRect(R);
+  InvalidateFrame(fOwner.Handle, @R, false, 1);
 end;
 
 procedure TPaintSel.DrawOrInvalidateViewHandles(t: TfrView; aDraw:boolean);
