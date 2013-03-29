@@ -17,8 +17,6 @@ interface
 {.$Define StdOI} // External Standard Object inspector (Jesus)
 {$define sbod}  // status bar owner draw
 {$define ppaint}
-{$define ppaint_persistent}
-{-$define DebugLR}
 uses
   Classes, SysUtils, FileUtil, LResources, LMessages,
   Forms, Controls, Graphics, Dialogs,ComCtrls,
@@ -204,7 +202,7 @@ type
     procedure GetMultipleSelected;
   end;
 
-  TPaintTimeStatusItem = (ptsFocusRect, ptsSelection);
+  TPaintTimeStatusItem = (ptsFocusRect);
   TPaintTimeStatus = set of TPaintTimeStatusItem;
 
   { TPaintSel }
@@ -225,7 +223,6 @@ type
     procedure FocusRect(aRect:TRect);
     procedure RemoveFocusRect;
     procedure DrawSelection;
-    procedure InvalidateSelection;
     procedure PaintSelection;
     procedure Paint;
   end;
@@ -731,24 +728,12 @@ end;
 
 procedure TPaintSel.DrawSelection;
 begin
-  Include(fStatus, ptsSelection);
-  DrawOrInvalidateSelection(false);
-end;
-
-procedure TPaintSel.InvalidateSelection;
-begin
   DrawOrInvalidateSelection(false);
 end;
 
 procedure TPaintSel.PaintSelection;
 begin
-  {$ifdef ppaint_persistent}
-  // paint directly
   DrawOrInvalidateSelection(true);
-  {$else}
-  // queue paint
-  DrawSelection;
-  {$endif}
 end;
 
 procedure TPaintSel.DrawOrInvalidateSelection(aDraw:boolean);
@@ -861,13 +846,6 @@ begin
     fOwner.Canvas.Rectangle(fFocusRect);
     Exclude(Fstatus, ptsFocusRect);
   end;
-  {$ifndef ppaint_persistent}
-  if ptsSelection in fStatus then
-  begin
-    DrawOrInvalidateSelection(true);
-    Exclude(Fstatus, ptsSelection);
-  end;
-  {$endif}
 end;
 
 {----------------------------------------------------------------------------}
@@ -2689,7 +2667,7 @@ end;
 procedure TfrDesignerPage.NPEraseSelection;
 begin
   {$ifdef ppaint}
-  fPaintSel.InvalidateSelection;
+  fPaintSel.DrawSelection;
   {$else}
   DrawPage(dmSelection);
   {$endif}
