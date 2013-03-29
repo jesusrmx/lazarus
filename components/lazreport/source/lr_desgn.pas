@@ -1744,7 +1744,7 @@ begin
     {$IFDEF DebugLR}
     DebugLnEnter('Inserting a New Object INIT');
     {$ENDIF}
-    //EnableEvents(false);
+    EnableEvents(false);
     Mode := mdSelect;
     if (OldRect.Left = OldRect.Right) and (OldRect.Top = OldRect.Bottom) then
       OldRect := OldRect1
@@ -1776,7 +1776,7 @@ begin
                     DebugLnExit('Inserting a new object DONE: GetUnusedBand=btNone');
                     DebugLnExit('TfrDesignerPage.MUp DONE: Inserting..');
                     {$ENDIF}
-                    //EnableEvents;
+                    EnableEvents;
                     Exit;
                   end;
                 end
@@ -1910,7 +1910,7 @@ begin
     DebugLnExit('Inserting a New Object DONE');
     DebugLnExit('TfrDesignerPage.MUp DONE: Inserting ...');
     {$ENDIF}
-    //EnableEvents;
+    EnableEvents;
     Exit;
   end;
   
