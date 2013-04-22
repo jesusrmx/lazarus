@@ -144,9 +144,10 @@ begin
   if fPageNo>1 then
     fCairoPrinter.NewPage;
 
-  fCairoPrinter.PaperHeight := CurReport.EMFPages[FPageNo - 1]^.PrnInfo.PPgh;
-  fCairoPrinter.PaperWidth := CurReport.EMFPages[FPageNo - 1]^.PrnInfo.PPgw;
-
+  with CurReport.EMFPages[FPageNo - 1]^ do begin
+    fCairoPrinter.PaperHeight := round(PrnInfo.PPgh * 72 / PrnInfo.ResX);
+    fCairoPrinter.PaperWidth := round(PrnInfo.PPgw * 72 / PrnInfo.ResX);
+  end;
   // TODO: non paged backends ...
 end;
 
@@ -221,4 +222,4 @@ initialization
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Adobe Acrobat PDF (*.pdf)', '*.pdf');
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Postscript (*.ps)', '*.ps');
 
-end.
+end.
