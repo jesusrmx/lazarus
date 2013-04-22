@@ -227,6 +227,7 @@ object frmMain: TfrmMain
   end
   object TheReport: TfrReport
     Dataset = frDbDetail
+    DefaultCopies = 0
     InitialZoom = pzDefault
     Options = [roIgnoreFieldNotFound]
     PreviewButtons = [pbZoom, pbLoad, pbSave, pbPrint, pbFind, pbHelp, pbExit]
@@ -238,9 +239,6 @@ object frmMain: TfrmMain
     OnExportFilterSetup = TheReportExportFilterSetup
     left = 40
     top = 192
-    ReportForm = {
-      19000000
-    }
   end
   object Detail: TDbf
     IndexDefs = <>
@@ -583,15 +581,13 @@ object frmMain: TfrmMain
     top = 360
   end
   object Composite: TfrCompositeReport
+    DefaultCopies = 0
     InitialZoom = pzDefault
     Options = []
     PreviewButtons = [pbZoom, pbLoad, pbSave, pbPrint, pbFind, pbHelp, pbExit]
     DataType = dtDataSet
     left = 40
     top = 248
-    ReportForm = {
-      19000000
-    }
   end
   object LookCountries: TDbf
     IndexDefs = <>
@@ -633,5 +629,9 @@ object frmMain: TfrmMain
   object frTNPDFExport1: TfrTNPDFExport
     left = 420
     top = 312
+  end
+  object lrCairoExport1: TlrCairoExport
+    left = 352
+    top = 128
   end
 end
