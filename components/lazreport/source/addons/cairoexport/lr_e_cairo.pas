@@ -35,9 +35,7 @@ type
     procedure AddShape(Data: TShapeData; x, y, h, w: integer);
     procedure DefaultShowView(View: TfrView; nx, ny, ndy, ndx: Integer);
     function GetBackend: TlrCairoBackend;
-    function GetResolution: Integer;
     procedure SetBackend(AValue: TlrCairoBackend);
-    procedure SetResolution(AValue: Integer);
   public
     constructor Create(AStream: TStream); override;
     destructor Destroy; override;
@@ -55,7 +53,6 @@ type
     procedure OnText(X, Y: Integer; const Text: string; View: TfrView); override;
     procedure OnData(x, y: Integer; View: TfrView); override;
   public
-    property Resolution: Integer read GetResolution write SetResolution;
     property Backend: TlrCairoBackend read GetBackend write SetBackend;
   end;
 
@@ -85,11 +82,6 @@ begin
   end;
 end;
 
-function TlrCairoExportFilter.GetResolution: Integer;
-begin
-  result := fCairoPrinter.YDPI;
-end;
-
 procedure TlrCairoExportFilter.SetBackend(AValue: TlrCairoBackend);
 begin
   if Backend=AValue then
@@ -101,14 +93,6 @@ begin
     else
       fCairoPrinter.CairoBackend := cbPDF;
   end;
-end;
-
-procedure TlrCairoExportFilter.SetResolution(AValue: Integer);
-begin
-  if Resolution=AValue then
-    Exit;
-  fCairoPrinter.XDPI:=AValue;
-  fCairoPrinter.YDPI:=AValue;
 end;
 
 constructor TlrCairoExportFilter.Create(AStream: TStream);
@@ -145,9 +129,10 @@ begin
     fCairoPrinter.NewPage;
 
   with CurReport.EMFPages[FPageNo - 1]^ do begin
-    fCairoPrinter.PaperHeight := round(PrnInfo.PPgh * 72 / PrnInfo.ResX);
-    fCairoPrinter.PaperWidth := round(PrnInfo.PPgw * 72 / PrnInfo.ResX);
+    fCairoPrinter.PaperHeight := PrnInfo.PPgh;
+    fCairoPrinter.PaperWidth := PrnInfo.PPgw;
   end;
+
   // TODO: non paged backends ...
 end;
 
@@ -158,6 +143,8 @@ end;
 
 procedure TlrCairoExportFilter.OnBeginDoc;
 begin
+  fCairoPrinter.XDPI := CurReport.EMFPages[0]^.Page.PrnInfo.ResX;
+  fCairoPrinter.YDPI := CurReport.EMFPages[0]^.Page.PrnInfo.ResY;
   fCairoPrinter.BeginDoc;
   fCairoPrinter.Canvas.Handle; // make sure handle is created
 end;
@@ -222,4 +209,4 @@ initialization
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Adobe Acrobat PDF (*.pdf)', '*.pdf');
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Postscript (*.ps)', '*.ps');
 
-end.
+end.
