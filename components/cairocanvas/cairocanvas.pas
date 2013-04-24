@@ -1297,6 +1297,9 @@ end;
 
 procedure TCairoPdfCanvas.UpdatePageSize;
 begin
+  WriteLn('Updating Page size:');
+  WriteLn(' PaperWidth=', PaperWidth, ' ResX=',XDPI,' ScaleX=',FloatToStr(ScaleX),'  Width(pts)=',FloatToStr(PaperWidth*ScaleX));
+  WriteLn('PaperHeight=', PaperHeight,' ResY=',YDPI,' ScaleY=',FloatToStr(ScaleY),' Height(pts)=',FloatToStr(PaperHeight*ScaleY));
   cairo_pdf_surface_set_size(sf, PaperWidth*ScaleX, PaperHeight*ScaleY);
 end;
 
