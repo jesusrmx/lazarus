@@ -38,6 +38,7 @@ type
     procedure DefaultShowView(View: TfrView; nx, ny, ndy, ndx: Integer);
     function GetBackend: TlrCairoBackend;
     procedure SetBackend(AValue: TlrCairoBackend);
+    procedure DbgPoint(x, y: Integer; color: TColor; delta:Integer=5);
   public
     constructor Create(AStream: TStream); override;
     destructor Destroy; override;
@@ -155,6 +156,13 @@ begin
     else
       fCairoPrinter.CairoBackend := cbPDF;
   end;
+end;
+
+procedure TlrCairoExportFilter.DbgPoint(x, y: Integer; color: TColor; delta:Integer=5);
+begin
+  fCairoPrinter.Canvas.Brush.Color := color;
+  fCairoPrinter.Canvas.Brush.Style := bsSolid;
+  fCairoPrinter.Canvas.Ellipse(x-Delta, y-Delta, x+Delta, y+Delta);
 end;
 
 constructor TlrCairoExportFilter.Create(AStream: TStream);
@@ -334,42 +342,23 @@ type
 procedure TlrCairoExportFilter.OnText(X, Y: Integer; const Text: string;
   View: TfrView);
 var
-  nx, ny, ndx, ndy: Integer;
-  gapx, gapy: integer;
-  aStyle : TTextStyle;
-  OldClipRect: TRect;
-  OldClipping: Boolean;
+  nx, ny: Integer;
+  aStyle: TTextStyle;
 begin
-
-  // setup clipping
-  OldClipping := fCairoPrinter.Canvas.Clipping;
-  if OldClipping then
-    OldClipRect := fCairoPrinter.Canvas.ClipRect;
-
-  fCairoPrinter.Canvas.ClipRect := DataRect;
-  fCairoPrinter.Canvas.Clipping := true;
-
-  gapx := trunc(View.FrameWidth / 2 + 0.5) + 2;
-  gapy := trunc(View.FrameWidth / 4 + 0.5) + 1;
-  nx := trunc((x+gapx) * ScaleX + 0.5);
-  ny := trunc((y+gapy) * ScaleY + 0.5);
-  ndx := trunc((View.dx-gapx) * ScaleX + 1.5);
-  ndy := trunc((View.dy-gapy) * ScaleY + 1.5);
 
   aStyle := fCairoPrinter.Canvas.TextStyle;
   aStyle.Alignment:=TfrMemoView_(View).Alignment;
-  aStyle.Clipping:=false;  // we are explicilty clipping
-  aStyle.Layout:=tlTop;
+  aStyle.Layout:=TfrMemoView_(View).Layout;
 
   fCairoPrinter.Canvas.Font := TfrMemoView_(View).Font;
   fCairoPrinter.Canvas.Font.Orientation := (View as TfrMemoView).Angle * 10;
-  fCairoPrinter.Canvas.TextRect(Rect(nx, ny, nx+ndx, ny+ndy), nx, ny, Text, aStyle);
 
-  // restore previous clipping
-  if OldClipping then
-    fCairoPrinter.Canvas.ClipRect := OldClipRect
+  nx := DataRect.Left;
+  if fCairoPrinter.Canvas.Font.Orientation<>0 then
+    ny := DataRect.Bottom
   else
-    fCairoPrinter.Canvas.Clipping := false;
+    ny := DataRect.Top;
+  fCairoPrinter.Canvas.TextRect(DataRect, nx, ny, Text, aStyle);
 
 end;
 
@@ -402,4 +391,4 @@ initialization
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Adobe Acrobat PDF (*.pdf)', '*.pdf');
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Postscript (*.ps)', '*.ps');
 
-end.
+end.
