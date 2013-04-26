@@ -83,7 +83,9 @@ begin
 
     frstRoundRect:
       begin
-        RoundRect(x, y, x+w, y+h, round(data.Radius), round(data.Radius));
+        //RoundRect(x, y, x+w, y+h, round(data.Radius), round(data.Radius));
+        TCairoPrinterCanvas(fCairoPrinter.Canvas).MixedRoundRect(x, y, x+w, y+h,
+          round(data.Radius), round(data.Radius), TSquaredCorners(Data.Corners));
         // TODO: SquaredCorners
       end;
 
@@ -331,7 +333,7 @@ begin
   Data.FrameColor := View.FrameColor;
   Data.FrameStyle := View.FrameStyle;
   Data.FrameWidth := View.FrameWidth;
-  Data.Radius := -1.0;
+  Data.Radius := 10; // TODO: check correct value
   Data.Corners := [];
   AddShape(Data, x, y, h, w);
 end;
@@ -430,4 +432,4 @@ initialization
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Adobe Acrobat PDF (*.pdf)', '*.pdf');
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Postscript (*.ps)', '*.ps');
 
-end.
+end.
