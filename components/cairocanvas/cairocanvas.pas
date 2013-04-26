@@ -2,6 +2,10 @@ unit CairoCanvas;
 
 {$mode objfpc}{$H+}
 
+{$if (FPC_FULLVERSION>=20701)}
+{$Packset 1}
+{$endif}
+
 {$define pangocairo}
 {-$define breaklines}   // disabled as it's not UTF-8 safe
 {-$define DebugClip}
@@ -17,6 +21,8 @@ uses
   ;
 
 type
+  TSquaredCorners = set of (scTopLeft,scBottomLeft,scBottomRight,scTopRight);
+
   { TCairoPrinterCanvas }
 
   TCairoPrinterCanvas = class(TFilePrinterCanvas)
@@ -82,6 +88,7 @@ type
     procedure FrameRect(const ARect: TRect); override;
     procedure Frame(const ARect: TRect); override;
     procedure RoundRect(X1, Y1, X2, Y2: Integer; RX, RY: Integer); override;
+    procedure MixedRoundRect(X1, Y1, X2, Y2: Integer; RX, RY: Integer; SquaredCorners: TSquaredCorners);
     procedure Ellipse(X1, Y1, X2, Y2: Integer); override;
     procedure Arc(ALeft, ATop, ARight, ABottom, Angle16Deg, Angle16DegLength: Integer); override;
     procedure Arc(ALeft, ATop, ARight, ABottom, StX, StY, EX, EY: Integer); override;
@@ -601,6 +608,53 @@ begin
   EllipseArcPath(X1+RX, Y2-RY, RX, RY, PI/2, PI, True, True);
   cairo_line_to(cr, SX(X1), SY(Y1+RX));
   EllipseArcPath(X1+RX, Y1+RY, RX, RY, PI, PI*1.5, True, True);
+  FillAndStroke;
+  Changed;
+end;
+
+procedure TCairoPrinterCanvas.MixedRoundRect(X1, Y1, X2, Y2: Integer; RX,
+  RY: Integer; SquaredCorners: TSquaredCorners);
+begin
+  Changing;
+  RequiredState([csHandleValid, csPenValid, csBrushValid]);
+
+  cairo_move_to(cr, SX(X1+RX), SY(Y1));
+  cairo_line_to(cr, SX(X2-RX), SY(Y1));
+
+  if scTopRight in SquaredCorners then
+  begin
+    cairo_line_to(cr, SX(X2), SY(Y1));
+    cairo_line_to(cr, SX(X2), SY(Y1+RY));
+  end else
+    EllipseArcPath(X2-RX, Y1+RY, RX, RY, -PI/2, 0, True, True);
+
+  cairo_line_to(cr, SX(X2), SY(Y2-RY));
+
+  if scBottomRight in SquaredCorners then
+  begin
+    cairo_line_to(cr, SX(X2), SY(Y2));
+    cairo_line_to(cr, SX(X2-RX), SY(Y2));
+  end else
+    EllipseArcPath(X2-RX, Y2-RY, RX, RY, 0, PI/2, True, True);
+
+  cairo_line_to(cr, SX(X1+RX), SY(Y2));
+
+  if scBottomLeft in SquaredCorners then
+  begin
+    cairo_line_to(cr, SX(X1), SY(Y2));
+    cairo_line_to(cr, SX(X1), SY(Y2-RY));
+  end else
+    EllipseArcPath(X1+RX, Y2-RY, RX, RY, PI/2, PI, True, True);
+
+  cairo_line_to(cr, SX(X1), SY(Y1+RX));
+
+  if scTopLeft in SquaredCorners then
+  begin
+    cairo_line_to(cr, SX(X1), SY(Y1));
+    cairo_line_to(cr, SX(X1+RX), SY(Y1));
+  end else
+    EllipseArcPath(X1+RX, Y1+RY, RX, RY, PI, PI*1.5, True, True);
+
   FillAndStroke;
   Changed;
 end;
