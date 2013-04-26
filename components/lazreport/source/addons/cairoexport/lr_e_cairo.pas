@@ -5,7 +5,7 @@ unit lr_e_cairo;
 interface
 
 uses
-  Classes, SysUtils, LResources, Forms, Controls, Graphics, Dialogs,
+  Classes, SysUtils, types, LResources, Forms, Controls, Graphics, Dialogs,
   lr_class, lr_barc, lr_rrect, lr_shape, CairoCanvas, CairoPrinter;
 
 type
@@ -342,24 +342,63 @@ type
 procedure TlrCairoExportFilter.OnText(X, Y: Integer; const Text: string;
   View: TfrView);
 var
-  nx, ny: Integer;
+  nx, ny, gapx, gapy, sgapx, sgapy: Integer;
   aStyle: TTextStyle;
+  OldClipping: Boolean;
+  OldClipRect, R: TRect;
 begin
+
+  // The text drawn in this function is enclosed in a view frame
+  // given by DataRect (cached from OnData event)
+  //
+  // this function is called repeteadly for each line of text contained in view
+  // For horizontal text, the y parameter has the y-position of current line
+  //                      and x parameter is constant
+  // For vertical text, the x parameter has the x-position of the curent line
+  //                    and y parameter is constant
+  //
+  // however this function is resposible for calculating the x-position (for
+  // horizontal text) or the y-position (for vertical text) corresponding to
+  // the specified alignment.
+
+  // This means LazReport is a mess. It gives exporter the task to calc the proper
+  // text widths for "alignment" purposes but it internally calc the height of text
+  // and so it assumes it properly calc the "layout" of text........
+
+  // setup clipping
+  //OldClipping := fCairoPrinter.Canvas.Clipping;
+  //if OldClipping then
+  //  OldClipRect := fCairoPrinter.Canvas.ClipRect;
+  //fCairoPrinter.Canvas.ClipRect := DataRect;
+  //fCairoPrinter.Canvas.Clipping := true;
 
   aStyle := fCairoPrinter.Canvas.TextStyle;
   aStyle.Alignment:=TfrMemoView_(View).Alignment;
-  aStyle.Layout:=TfrMemoView_(View).Layout;
+  aStyle.Clipping:=false;  // NOTE: there are some interaction between this and roundrect
+  aStyle.Layout:=tlTop;    //       background painting, set to false for the moment
+
+  gapx := trunc(View.FrameWidth / 2 + 0.5) + 2;
+  gapy := trunc(View.FrameWidth / 4 + 0.5) + 1;
+  sgapx := trunc( gapx * ScaleX + 0.5);
+  sgapy := trunc( gapy * ScaleY + 0.5);
+  nx := trunc((x+gapx) * ScaleX + 0.5);
+  ny := trunc((y+gapy) * ScaleY + 0.5);
+  R := DataRect;
+  InflateRect(R, -sgapx, -sgapy);
 
   fCairoPrinter.Canvas.Font := TfrMemoView_(View).Font;
   fCairoPrinter.Canvas.Font.Orientation := (View as TfrMemoView).Angle * 10;
 
-  nx := DataRect.Left;
   if fCairoPrinter.Canvas.Font.Orientation<>0 then
-    ny := DataRect.Bottom
+    fCairoPrinter.Canvas.TextRect(R, nx, R.Bottom, Text, aStyle)
   else
-    ny := DataRect.Top;
-  fCairoPrinter.Canvas.TextRect(DataRect, nx, ny, Text, aStyle);
+    fCairoPrinter.Canvas.TextRect(R, R.Left, ny, Text, aStyle);
 
+  // restore previous clipping
+  //if OldClipping then
+  //  fCairoPrinter.Canvas.ClipRect := OldClipRect
+  //else
+  //  fCairoPrinter.Canvas.Clipping := false;
 end;
 
 procedure TlrCairoExportFilter.OnData(x, y: Integer; View: TfrView);
@@ -391,4 +430,4 @@ initialization
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Adobe Acrobat PDF (*.pdf)', '*.pdf');
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Postscript (*.ps)', '*.ps');
 
-end.
+end.
