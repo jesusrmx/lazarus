@@ -8,7 +8,7 @@
 {                                         }
 {*****************************************}
 
-{$define DbgPrinter}
+{.$define DbgPrinter}
 
 unit LR_Prntr;
 
