@@ -1,27 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <CONFIG>
   <LazReport>
-    <Version Value="25"/>
+    <Version Value="26"/>
     <Title Value=""/>
     <Subject Value=""/>
     <KeyWords Value=""/>
     <Comments Value=""/>
+    <ReportCreateDate Value="2013-04-26 03:01:50"/>
+    <ReportLastChange Value="2013-04-26 03:02:13"/>
     <ReportVersionBuild Value=""/>
     <ReportVersionMajor Value=""/>
     <ReportVersionMinor Value=""/>
     <ReportVersionRelease Value=""/>
     <ReportAutor Value=""/>
+    <Script Value=""/>
     <Pages>
       <PrintToDefault Value="False"/>
       <DoublePass Value="True"/>
-      <SelectedPrinter Value="Microsoft Office Document Image Writer"/>
+      <SelectedPrinter Value="HP LaserJet 1200 Series PCL"/>
       <PageCount Value="1"/>
       <Page1>
         <Name Value="Page1"/>
         <ClassName Value="TfrPageReport"/>
-        <Visible Value="1"/>
-        <Width Value="1"/>
-        <Height Value="1" PageType="0"/>
+        <Visible Value="True"/>
+        <Width Value="595"/>
+        <Height Value="842"/>
+        <Script Value=""/>
         <PgSize Value="9"/>
         <Margins>
           <left Value="0"/>
@@ -39,7 +43,7 @@
         <Object1>
           <Name Value="RoundRect1"/>
           <ClassName Value="TfrRoundRectView"/>
-          <Visible Value="1"/>
+          <Visible Value="True"/>
           <Typ Value="gtAddIn"/>
           <StreamMode Value="0"/>
           <Size>
@@ -49,12 +53,12 @@
             <Height Value="90"/>
           </Size>
           <Flags Value="3"/>
-          <FillColor Value="clNone"/>
+          <FillColor Value="clFuchsia"/>
           <Frames>
             <FrameColor Value="clBlack"/>
             <FrameStyle Value="frsSolid"/>
             <FrameWidth Value="1"/>
-            <FrameBorders Value=""/>
+            <FrameBorders Value="frbLeft,frbTop,frbRight,frbBottom"/>
           </Frames>
           <Data>
             <Format Value="558"/>
@@ -67,7 +71,10 @@
             <ShadowWidth Value="6"/>
             <RoundRect Value="1"/>
             <RoundRectCurve Value="10"/>
+            <SquaredCorners Value=""/>
           </Data>
+          <Tag Value=""/>
+          <FURLInfo Value=""/>
           <Font>
             <Name Value="Arial"/>
             <Size Value="10"/>
@@ -84,11 +91,12 @@
           <Alignment Value="taLeftJustify"/>
           <Layout Value="tlTop"/>
           <Angle Value="0"/>
+          <Justify Value="False"/>
         </Object1>
         <Object2>
           <Name Value="RoundRect2"/>
           <ClassName Value="TfrRoundRectView"/>
-          <Visible Value="1"/>
+          <Visible Value="True"/>
           <Typ Value="gtAddIn"/>
           <StreamMode Value="0"/>
           <Size>
@@ -116,7 +124,10 @@
             <ShadowWidth Value="6"/>
             <RoundRect Value="1"/>
             <RoundRectCurve Value="10"/>
+            <SquaredCorners Value=""/>
           </Data>
+          <Tag Value=""/>
+          <FURLInfo Value=""/>
           <Font>
             <Name Value="Arial"/>
             <Size Value="10"/>
@@ -133,11 +144,12 @@
           <Alignment Value="taLeftJustify"/>
           <Layout Value="tlTop"/>
           <Angle Value="0"/>
+          <Justify Value="False"/>
         </Object2>
         <Object3>
           <Name Value="RoundRect3"/>
           <ClassName Value="TfrRoundRectView"/>
-          <Visible Value="1"/>
+          <Visible Value="True"/>
           <Typ Value="gtAddIn"/>
           <StreamMode Value="0"/>
           <Size>
@@ -165,7 +177,10 @@
             <ShadowWidth Value="10"/>
             <RoundRect Value="1"/>
             <RoundRectCurve Value="20"/>
+            <SquaredCorners Value=""/>
           </Data>
+          <Tag Value=""/>
+          <FURLInfo Value=""/>
           <Font>
             <Name Value="Arial"/>
             <Size Value="10"/>
@@ -182,11 +197,12 @@
           <Alignment Value="taLeftJustify"/>
           <Layout Value="tlTop"/>
           <Angle Value="0"/>
+          <Justify Value="False"/>
         </Object3>
         <Object4>
           <Name Value="RoundRect4"/>
           <ClassName Value="TfrRoundRectView"/>
-          <Visible Value="1"/>
+          <Visible Value="True"/>
           <Typ Value="gtAddIn"/>
           <StreamMode Value="0"/>
           <Size>
@@ -201,7 +217,7 @@
             <FrameColor Value="clBlack"/>
             <FrameStyle Value="frsSolid"/>
             <FrameWidth Value="1"/>
-            <FrameBorders Value=""/>
+            <FrameBorders Value="frbLeft,frbTop,frbRight,frbBottom"/>
           </Frames>
           <Data>
             <Format Value="558"/>
@@ -214,7 +230,10 @@
             <ShadowWidth Value="6"/>
             <RoundRect Value="0"/>
             <RoundRectCurve Value="10"/>
+            <SquaredCorners Value=""/>
           </Data>
+          <Tag Value=""/>
+          <FURLInfo Value=""/>
           <Font>
             <Name Value="Arial"/>
             <Size Value="10"/>
@@ -231,11 +250,12 @@
           <Alignment Value="taLeftJustify"/>
           <Layout Value="tlTop"/>
           <Angle Value="0"/>
+          <Justify Value="False"/>
         </Object4>
         <Object5>
           <Name Value="RoundRect5"/>
           <ClassName Value="TfrRoundRectView"/>
-          <Visible Value="1"/>
+          <Visible Value="True"/>
           <Typ Value="gtAddIn"/>
           <StreamMode Value="0"/>
           <Size>
@@ -263,7 +283,10 @@
             <ShadowWidth Value="6"/>
             <RoundRect Value="0"/>
             <RoundRectCurve Value="10"/>
+            <SquaredCorners Value=""/>
           </Data>
+          <Tag Value=""/>
+          <FURLInfo Value=""/>
           <Font>
             <Name Value="Arial"/>
             <Size Value="10"/>
@@ -280,11 +303,12 @@
           <Alignment Value="taLeftJustify"/>
           <Layout Value="tlTop"/>
           <Angle Value="0"/>
+          <Justify Value="False"/>
         </Object5>
         <Object6>
           <Name Value="RoundRect6"/>
           <ClassName Value="TfrRoundRectView"/>
-          <Visible Value="1"/>
+          <Visible Value="True"/>
           <Typ Value="gtAddIn"/>
           <StreamMode Value="0"/>
           <Size>
@@ -312,7 +336,10 @@
             <ShadowWidth Value="10"/>
             <RoundRect Value="0"/>
             <RoundRectCurve Value="20"/>
+            <SquaredCorners Value=""/>
           </Data>
+          <Tag Value=""/>
+          <FURLInfo Value=""/>
           <Font>
             <Name Value="Arial"/>
             <Size Value="10"/>
@@ -329,11 +356,12 @@
           <Alignment Value="taLeftJustify"/>
           <Layout Value="tlTop"/>
           <Angle Value="0"/>
+          <Justify Value="False"/>
         </Object6>
         <Object7>
           <Name Value="RoundRect7"/>
           <ClassName Value="TfrRoundRectView"/>
-          <Visible Value="1"/>
+          <Visible Value="True"/>
           <Typ Value="gtAddIn"/>
           <StreamMode Value="0"/>
           <Size>
@@ -348,7 +376,7 @@
             <FrameColor Value="clBlack"/>
             <FrameStyle Value="frsSolid"/>
             <FrameWidth Value="1"/>
-            <FrameBorders Value=""/>
+            <FrameBorders Value="frbLeft,frbTop,frbRight,frbBottom"/>
           </Frames>
           <Data>
             <Format Value="558"/>
@@ -361,7 +389,10 @@
             <ShadowWidth Value="6"/>
             <RoundRect Value="0"/>
             <RoundRectCurve Value="0"/>
+            <SquaredCorners Value=""/>
           </Data>
+          <Tag Value=""/>
+          <FURLInfo Value=""/>
           <Font>
             <Name Value="Arial"/>
             <Size Value="10"/>
@@ -378,11 +409,12 @@
           <Alignment Value="taLeftJustify"/>
           <Layout Value="tlTop"/>
           <Angle Value="0"/>
+          <Justify Value="False"/>
         </Object7>
         <Object8>
           <Name Value="RoundRect8"/>
           <ClassName Value="TfrRoundRectView"/>
-          <Visible Value="1"/>
+          <Visible Value="True"/>
           <Typ Value="gtAddIn"/>
           <StreamMode Value="0"/>
           <Size>
@@ -410,7 +442,10 @@
             <ShadowWidth Value="6"/>
             <RoundRect Value="0"/>
             <RoundRectCurve Value="0"/>
+            <SquaredCorners Value=""/>
           </Data>
+          <Tag Value=""/>
+          <FURLInfo Value=""/>
           <Font>
             <Name Value="Arial"/>
             <Size Value="10"/>
@@ -427,11 +462,12 @@
           <Alignment Value="taLeftJustify"/>
           <Layout Value="tlTop"/>
           <Angle Value="0"/>
+          <Justify Value="False"/>
         </Object8>
         <Object9>
           <Name Value="RoundRect9"/>
           <ClassName Value="TfrRoundRectView"/>
-          <Visible Value="1"/>
+          <Visible Value="True"/>
           <Typ Value="gtAddIn"/>
           <StreamMode Value="0"/>
           <Size>
@@ -459,7 +495,10 @@
             <ShadowWidth Value="10"/>
             <RoundRect Value="0"/>
             <RoundRectCurve Value="0"/>
+            <SquaredCorners Value=""/>
           </Data>
+          <Tag Value=""/>
+          <FURLInfo Value=""/>
           <Font>
             <Name Value="Arial"/>
             <Size Value="10"/>
@@ -476,11 +515,12 @@
           <Alignment Value="taLeftJustify"/>
           <Layout Value="tlTop"/>
           <Angle Value="0"/>
+          <Justify Value="False"/>
         </Object9>
         <Object10>
           <Name Value="RoundRect10"/>
           <ClassName Value="TfrRoundRectView"/>
-          <Visible Value="1"/>
+          <Visible Value="True"/>
           <Typ Value="gtAddIn"/>
           <StreamMode Value="0"/>
           <Size>
@@ -495,7 +535,7 @@
             <FrameColor Value="clBlack"/>
             <FrameStyle Value="frsSolid"/>
             <FrameWidth Value="1"/>
-            <FrameBorders Value=""/>
+            <FrameBorders Value="frbLeft,frbTop,frbRight,frbBottom"/>
           </Frames>
           <Data>
             <Format Value="558"/>
@@ -508,7 +548,10 @@
             <ShadowWidth Value="6"/>
             <RoundRect Value="1"/>
             <RoundRectCurve Value="0"/>
+            <SquaredCorners Value=""/>
           </Data>
+          <Tag Value=""/>
+          <FURLInfo Value=""/>
           <Font>
             <Name Value="Arial"/>
             <Size Value="10"/>
@@ -525,11 +568,12 @@
           <Alignment Value="taLeftJustify"/>
           <Layout Value="tlTop"/>
           <Angle Value="0"/>
+          <Justify Value="False"/>
         </Object10>
         <Object11>
           <Name Value="RoundRect11"/>
           <ClassName Value="TfrRoundRectView"/>
-          <Visible Value="1"/>
+          <Visible Value="True"/>
           <Typ Value="gtAddIn"/>
           <StreamMode Value="0"/>
           <Size>
@@ -557,7 +601,10 @@
             <ShadowWidth Value="6"/>
             <RoundRect Value="1"/>
             <RoundRectCurve Value="0"/>
+            <SquaredCorners Value=""/>
           </Data>
+          <Tag Value=""/>
+          <FURLInfo Value=""/>
           <Font>
             <Name Value="Arial"/>
             <Size Value="10"/>
@@ -574,11 +621,12 @@
           <Alignment Value="taLeftJustify"/>
           <Layout Value="tlTop"/>
           <Angle Value="0"/>
+          <Justify Value="False"/>
         </Object11>
         <Object12>
           <Name Value="RoundRect12"/>
           <ClassName Value="TfrRoundRectView"/>
-          <Visible Value="1"/>
+          <Visible Value="True"/>
           <Typ Value="gtAddIn"/>
           <StreamMode Value="0"/>
           <Size>
@@ -606,7 +654,10 @@
             <ShadowWidth Value="6"/>
             <RoundRect Value="1"/>
             <RoundRectCurve Value="0"/>
+            <SquaredCorners Value=""/>
           </Data>
+          <Tag Value=""/>
+          <FURLInfo Value=""/>
           <Font>
             <Name Value="Arial"/>
             <Size Value="10"/>
@@ -623,6 +674,7 @@
           <Alignment Value="taLeftJustify"/>
           <Layout Value="tlTop"/>
           <Angle Value="0"/>
+          <Justify Value="False"/>
         </Object12>
       </Page1>
       <FVal>
