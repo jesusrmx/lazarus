@@ -7,7 +7,7 @@
     <KeyWords Value=""/>
     <Comments Value=""/>
     <ReportCreateDate Value="2013-04-26 14:22:19"/>
-    <ReportLastChange Value="2013-04-26 15:52:06"/>
+    <ReportLastChange Value="2013-04-28 17:37:13"/>
     <ReportVersionBuild Value=""/>
     <ReportVersionMajor Value=""/>
     <ReportVersionMinor Value=""/>
@@ -16,8 +16,8 @@
     <Script Value=""/>
     <Pages>
       <PrintToDefault Value="False"/>
-      <DoublePass Value="True"/>
-      <SelectedPrinter Value="Generic-CUPS-PDF-Printer"/>
+      <DoublePass Value="False"/>
+      <SelectedPrinter Value="HP LaserJet 1200 Series PCL"/>
       <PageCount Value="1"/>
       <Page1>
         <Name Value="Page1"/>
@@ -39,7 +39,7 @@
         <ColCount Value="0"/>
         <ColGap Value="0"/>
         <LayoutOrder Value="loColumns"/>
-        <ObjectCount Value="25"/>
+        <ObjectCount Value="26"/>
         <Object1>
           <Name Value="Memo1"/>
           <ClassName Value="TfrMemoView"/>
@@ -1101,6 +1101,27 @@
           <Angle Value="0"/>
           <Justify Value="False"/>
         </Object25>
+        <Object26>
+          <Name Value="Line1"/>
+          <ClassName Value="TfrLineView"/>
+          <Visible Value="True"/>
+          <Typ Value="gtLine"/>
+          <StreamMode Value="0"/>
+          <Size>
+            <Left Value="396"/>
+            <Top Value="360"/>
+            <Width Value="208"/>
+            <Height Value="0"/>
+          </Size>
+          <Flags Value="0"/>
+          <Frames>
+            <FrameColor Value="clBlack"/>
+            <FrameStyle Value="frsSolid"/>
+            <FrameWidth Value="1"/>
+          </Frames>
+          <Tag Value=""/>
+          <FURLInfo Value=""/>
+        </Object26>
       </Page1>
       <FVal>
         <Count Value="0"/>
