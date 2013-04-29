@@ -5,7 +5,7 @@ unit lr_e_cairo;
 interface
 
 uses
-  Classes, SysUtils, types, LResources, Forms, Controls, Graphics, Dialogs,
+  Classes, SysUtils, types, LResources, LCLProc, Forms, Controls, Graphics, Dialogs,
   lr_class, lr_barc, lr_rrect, lr_shape, CairoCanvas, CairoPrinter;
 
 type
@@ -28,6 +28,7 @@ type
 
   TlrCairoExportFilter = class(TfrExportFilter)
   private
+    fBackend: TlrCairoBackend;
     NewPage: Boolean;
     fCairoPrinter: TCairoFilePrinter;
     FPageNo : Integer;
@@ -36,9 +37,9 @@ type
     DataRect: TRect;
     procedure AddShape(Data: TShapeData; x, y, h, w: integer);
     procedure DefaultShowView(View: TfrView; nx, ny, ndy, ndx: Integer);
-    function GetBackend: TlrCairoBackend;
-    procedure SetBackend(AValue: TlrCairoBackend);
     procedure DbgPoint(x, y: Integer; color: TColor; delta:Integer=5);
+  protected
+    procedure Setup;
   public
     constructor Create(AStream: TStream); override;
     destructor Destroy; override;
@@ -49,6 +50,7 @@ type
     procedure ShowBackGround(View: TfrView; x, y, h, w: integer);
     procedure Frame(View: TfrView; x, y, h, w: integer);
     procedure ShowFrame(View: TfrView; x, y, h, w: integer);
+    procedure Line(View: TfrView; x1,y1, x2,y2: Integer);
     procedure ShowBarCode(View: TfrBarCodeView; x, y, h, w: integer);
     procedure ShowPicture(View: TfrPictureView; x, y, h, w: integer);
     procedure ShowRoundRect(View: TfrRoundRectView; x, y, h, w: integer);
@@ -56,7 +58,7 @@ type
     procedure OnText(X, Y: Integer; const Text: string; View: TfrView); override;
     procedure OnData(x, y: Integer; View: TfrView); override;
   public
-    property Backend: TlrCairoBackend read GetBackend write SetBackend;
+    property Backend: TlrCairoBackend read fBackend write fBackend;
   end;
 
 implementation
@@ -71,7 +73,7 @@ begin
   fCairoPrinter.Canvas.Brush.Color := Data.FillColor;
   fCairoPrinter.Canvas.Pen.Color := Data.FrameColor;
   fCairoPrinter.Canvas.Pen.Style := TPenStyle(Data.FrameStyle);
-  fCairoPrinter.Canvas.Pen.Width:=round(Data.FrameWidth-0.5);
+  fCairoPrinter.Canvas.Pen.Width := trunc(Data.FrameWidth*ScaleX + 0.5);
 
   with fCairoPrinter.Canvas do
   case Data.ShapeType of
@@ -137,34 +139,23 @@ begin
      ShowFrame(View, nx, ny, ndy, ndx);
 end;
 
-function TlrCairoExportFilter.GetBackend: TlrCairoBackend;
-begin
-  case fCairoPrinter.CairoBackend of
-    cbPS:
-      result := cePS;
-    else
-      result := cePDF;
-  end;
-end;
-
-procedure TlrCairoExportFilter.SetBackend(AValue: TlrCairoBackend);
-begin
-  if Backend=AValue then
-    Exit;
-
-  case AValue of
-    cePS:
-      fCairoPrinter.CairoBackend := cbPS;
-    else
-      fCairoPrinter.CairoBackend := cbPDF;
-  end;
-end;
-
 procedure TlrCairoExportFilter.DbgPoint(x, y: Integer; color: TColor; delta:Integer=5);
 begin
   fCairoPrinter.Canvas.Brush.Color := color;
   fCairoPrinter.Canvas.Brush.Style := bsSolid;
   fCairoPrinter.Canvas.Ellipse(x-Delta, y-Delta, x+Delta, y+Delta);
+end;
+
+procedure TlrCairoExportFilter.Setup;
+begin
+  inherited Setup;
+
+  case Backend of
+    cePS:
+      fCairoPrinter.CairoBackend := cbPS;
+    else
+      fCairoPrinter.CairoBackend := cbPDF;
+  end;
 end;
 
 constructor TlrCairoExportFilter.Create(AStream: TStream);
@@ -215,10 +206,13 @@ end;
 
 procedure TlrCairoExportFilter.OnBeginDoc;
 begin
-  fCairoPrinter.XDPI := CurReport.EMFPages[0]^.Page.PrnInfo.ResX;
-  fCairoPrinter.YDPI := CurReport.EMFPages[0]^.Page.PrnInfo.ResY;
+
+  fCairoPrinter.XDPI := CurReport.EMFPages[0]^.PrnInfo.ResX;
+  fCairoPrinter.YDPI := CurReport.EMFPages[0]^.PrnInfo.ResY;
+
   ScaleX := fCairoPrinter.XDPI / (93 / 1.022);  // scaling factor X Printer DPI / Design Screen DPI
   ScaleY := fCairoPrinter.YDPI / (93 / 1.015);  // "              Y "
+
   fCairoPrinter.BeginDoc;
   fCairoPrinter.Canvas.Handle; // make sure handle is created
 end;
@@ -240,28 +234,34 @@ procedure TlrCairoExportFilter.Frame(View: TfrView; x, y, h, w: integer);
 begin
   fCairoPrinter.Canvas.Pen.Style:=TPenStyle(View.FrameStyle);
   fCairoPrinter.Canvas.Pen.Color:=View.FrameColor;
-  fCairoPrinter.Canvas.Pen.Width:=round(View.FrameWidth - 0.5);
-  fCairoPrinter.Canvas.Frame(x, y, x+w, y+h);
+  fCairoPrinter.Canvas.Pen.Width := trunc(View.FrameWidth*ScaleX + 0.5);
+  fCairoPrinter.Canvas.Rectangle(x, y, x+w, y+h);
 end;
 
 procedure TlrCairoExportFilter.ShowFrame(View: TfrView; x, y, h, w: integer);
 begin
-  if ([frbLeft,frbTop,frbRight,frbBottom]-View.Frames=[]) and
-     (View.FrameStyle = frsSolid) then
-  begin
-    Frame(View, x, y, h, w);
-  end
+  if ([frbLeft,frbTop,frbRight,frbBottom]-View.Frames=[]) then
+    Frame(View, x, y, h, w)
   else
   begin
     if frbRight in View.Frames then
-      Frame(View, x + w - 1, y, h, 0); //Right
+      Line(View, x+w, y, x+w, y+h);
     if frbLeft in View.Frames then
-      Frame(View, x, y, h, 0); //Left
+      Line(View, x, y+h, x, y);
     if frbBottom in View.Frames then
-      Frame(View, x, y + h - 1, 0, w); //Botton
+      Line(View, x+w, y+h, x, y+h);
     if frbTop in View.Frames then
-      Frame(View, x, y, 0, w); //Top
+      Line(View, x, y, x+w, y);
   end;
+end;
+
+procedure TlrCairoExportFilter.Line(View:TfrView; x1, y1, x2, y2: Integer);
+begin
+  fCairoPrinter.Canvas.Pen.Style:=TPenStyle(View.FrameStyle);
+  fCairoPrinter.Canvas.Pen.Color:=View.FrameColor;
+  fCairoPrinter.Canvas.Pen.Width := trunc(View.FrameWidth*ScaleX + 0.5);
+  fCairoPrinter.Canvas.MoveTo(x1,y1);
+  fCairoPrinter.Canvas.LineTo(X2,Y2);
 end;
 
 procedure TlrCairoExportFilter.ShowBarCode(View: TfrBarCodeView; x, y, h,
@@ -432,4 +432,4 @@ initialization
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Adobe Acrobat PDF (*.pdf)', '*.pdf');
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Postscript (*.ps)', '*.ps');
 
-end.
+end.
