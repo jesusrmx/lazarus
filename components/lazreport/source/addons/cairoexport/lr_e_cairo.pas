@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, types, LResources, LCLProc, Forms, Controls, Graphics, Dialogs,
-  lr_class, lr_barc, lr_rrect, lr_shape, CairoCanvas, CairoPrinter;
+  lr_class, lr_barc, lr_rrect, lr_shape, Cairo, CairoCanvas, CairoPrinter;
 
 type
   TShapeData = record
@@ -17,6 +17,12 @@ type
     FrameColor: TColor;
     Radius: Single;
     Corners: TCornerSet;
+  end;
+
+  PImageItem = ^TImageItem;
+  TImageItem = record
+    surface: pcairo_surface_t;
+    sharename: string;
   end;
 
   TlrCairoExport = class(TComponent)
@@ -35,9 +41,12 @@ type
     DummyControl: TForm;
     ScaleX,ScaleY: Double;
     DataRect: TRect;
+    fImageList: TfpList;
     procedure AddShape(Data: TShapeData; x, y, h, w: integer);
     procedure DefaultShowView(View: TfrView; nx, ny, ndy, ndx: Integer);
     procedure DbgPoint(x, y: Integer; color: TColor; delta:Integer=5);
+    procedure ClearImageList;
+    function  IndexOfImage(SharedName: string): Integer;
   protected
     procedure Setup;
   public
@@ -62,6 +71,17 @@ type
   end;
 
 implementation
+
+// missing cairo functions to make shared images posible
+const
+  CAIRO_MIME_TYPE_JPEG = 'image/jpeg';
+  CAIRO_MIME_TYPE_PNG = 'image/png';
+  CAIRO_MIME_TYPE_JP2 = 'image/jp2';
+  CAIRO_MIME_TYPE_URI = 'text/x-uri';
+
+procedure cairo_surface_get_mime_data(surface:Pcairo_surface_t; mime_type:Pchar; data:PPbyte; length:Pdword); cdecl; external LIB_CAIRO;
+function cairo_surface_set_mime_data(surface:Pcairo_surface_t; mime_type:Pchar; data:Pbyte; length:dword;
+                                     destroy:cairo_destroy_func_t; closure:pointer):cairo_status_t; cdecl; external LIB_CAIRO;
 
 
 { TlrCairoExportFilter }
@@ -146,6 +166,33 @@ begin
   fCairoPrinter.Canvas.Ellipse(x-Delta, y-Delta, x+Delta, y+Delta);
 end;
 
+procedure TlrCairoExportFilter.ClearImageList;
+var
+  Item: PImageItem;
+  i: Integer;
+begin
+  for i:=0 to fImageList.Count-1 do begin
+    Item := fImagelist[i];
+    cairo_surface_destroy(Item^.surface);
+    Item^.sharename:='';
+    Dispose(Item);
+  end;
+  fImageList.Clear;
+end;
+
+function TlrCairoExportFilter.IndexOfImage(SharedName: string): Integer;
+var
+  i: Integer;
+begin
+  result := -1;
+  for i:=0 to fImageList.Count-1 do begin
+    if SharedName=PImageItem(fImageList[i])^.sharename then begin
+      result := i;
+      break;
+    end;
+  end;
+end;
+
 procedure TlrCairoExportFilter.Setup;
 begin
   inherited Setup;
@@ -175,11 +222,13 @@ begin
         Backend := cePDF;
     end;
   end;
-
+  fImageList := TfpList.Create;
 end;
 
 destructor TlrCairoExportFilter.Destroy;
 begin
+  ClearImageList;
+  fImageList.Free;
   fCairoPrinter.Free;
   inherited Destroy;
 end;
@@ -270,10 +319,106 @@ begin
 
 end;
 
+procedure destroymstream(data: pointer); cdecl;
+begin
+  TMemoryStream(data).Free;
+end;
+
 procedure TlrCairoExportFilter.ShowPicture(View: TfrPictureView; x, y, h,
   w: integer);
-begin
+var
+  cr: pcairo_t;
+  sf, isf: pcairo_surface_t;
+  m: TMemoryStream;
+  item: PImageItem;
 
+  r: Double;
+  L: Integer;
+  pw, ph: Integer;
+  Picture: TPicture;
+  i: Integer;
+begin
+  picture := View.Picture;
+
+  cr := pcairo_t(fCairoPrinter.Canvas.Handle);
+  sf := cairo_get_target(cr);
+  m := TMemoryStream.Create;
+
+  if Picture.Graphic is TJPegImage then
+  begin
+
+    // check if picture is shared and already exists
+    isf := nil;
+    if View.SharedName<>'' then begin
+      i := IndexOfImage(View.SharedName);
+      if i>=0 then
+        isf := PImageItem(fImageList[i])^.surface;
+    end;
+
+    if isf=nil then begin
+      TJPegImage(Picture.Graphic).SaveToStream(M);
+      isf := cairo_image_surface_create(CAIRO_FORMAT_RGB24, Picture.Width, Picture.Height);
+      cairo_surface_set_mime_data(isf, CAIRO_MIME_TYPE_JPEG, pbyte(m.Memory), m.Size,  @destroymstream, pointer(m));
+
+      if View.SharedName<>'' then begin
+        New(Item);
+        Item^.surface:=isf;
+        Item^.sharename:=View.SharedName;
+        fImageList.Add(Item);
+      end;
+    end;
+
+  end else
+  begin
+
+  end;
+
+  // draw surface
+  ph := h;
+  pw := w;
+
+  if view.Stretched then
+  begin
+    if (View.Flags and flPictRatio<>0) and
+       (Picture.Width>0) and (Picture.Height>0) then
+    begin
+      r  := Picture.Width/Picture.Height;
+      if (w/h) < r then
+      begin
+        L := h;
+        ph := trunc(w/r + 0.5);
+        if (View.Flags and flPictCenter<>0) then
+          y := y + (L-ph) div 2;
+      end
+      else
+      begin
+        L := w;
+        pw := trunc(h*r + 0.5);
+        if (View.Flags and flPictCenter<>0) then
+          x := x + (L-pw) div 2;
+      end;
+    end;
+  end
+  else begin
+    if (View.Flags and flPictCenter<>0) then begin
+      pw := trunc(Picture.Width * ScaleX + 1.5);
+      ph := trunc(Picture.Height * ScaleY + 1.5);
+       x := x + (w - pw) div 2 - 1;
+       y := y + (h - ph) div 2 - 1;
+    end;
+  end;
+
+  cairo_save(cr);
+  cairo_translate(cr, x*ScaleX, y*ScaleX);
+  cairo_scale(cr, pw * ScaleX, ph * ScaleY);
+  cairo_set_source_surface(cr, isf, 0, 0);
+  cairo_paint(cr);
+
+  if View.SharedName='' then
+  begin
+    cairo_surface_destroy(isf);
+    m.free;
+  end;
 end;
 
 procedure TlrCairoExportFilter.ShowRoundRect(View: TfrRoundRectView; x, y, h,
@@ -432,4 +577,4 @@ initialization
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Adobe Acrobat PDF (*.pdf)', '*.pdf');
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Postscript (*.ps)', '*.ps');
 
-end.
+end.
