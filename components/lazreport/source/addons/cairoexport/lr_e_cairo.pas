@@ -78,7 +78,9 @@ const
   CAIRO_MIME_TYPE_PNG = 'image/png';
   CAIRO_MIME_TYPE_JP2 = 'image/jp2';
   CAIRO_MIME_TYPE_URI = 'text/x-uri';
-
+{$IFDEF CAIRO_HAS_MIME_TYPE_UNIQUE}
+  CAIRO_MIME_TYPE_UNIQUE = 'application/x-cairo.uuid'
+{$ENDIF}
 procedure cairo_surface_get_mime_data(surface:Pcairo_surface_t; mime_type:Pchar; data:PPbyte; length:Pdword); cdecl; external LIB_CAIRO;
 function cairo_surface_set_mime_data(surface:Pcairo_surface_t; mime_type:Pchar; data:Pbyte; length:dword;
                                      destroy:cairo_destroy_func_t; closure:pointer):cairo_status_t; cdecl; external LIB_CAIRO;
@@ -331,6 +333,13 @@ begin
   TMemoryStream(data).Free;
 end;
 
+{$IFDEF CAIRO_HAS_MIME_TYPE_UNIQUE}
+procedure destroybuf(data: pointer); cdecl;
+begin
+  freemem(data);
+end;
+{$ENDIF}
+
 procedure TlrCairoExportFilter.ShowPicture(View: TfrPictureView; x, y, h,
   w: integer);
 var
@@ -341,90 +350,120 @@ var
 
   r: Double;
   L: Integer;
-  pw, ph: Integer;
+  pw, ph, picw, pich: Integer;
   Picture: TPicture;
   i: Integer;
+
+  ImageShared, AddToList: boolean;
+  imgbuf: pbyte;
 begin
+
   picture := View.Picture;
+  picw := Picture.Graphic.Width;
+  pich := Picture.Graphic.Height;
 
   cr := pcairo_t(fCairoPrinter.Canvas.Handle);
   sf := cairo_get_target(cr);
-  m := TMemoryStream.Create;
 
-  if Picture.Graphic is TJPegImage then
+  ImageShared := (View.SharedName<>'') and (Backend=cePDF);
+
+  AddToList := false;
+  M := nil;
+  imgbuf := nil;
+
+  // check if image is shared and has already been used
+  isf := nil;
+  if ImageShared then begin
+    i := IndexOfImage(View.SharedName);
+    if i>=0 then
+      isf := PImageItem(fImageList[i])^.surface;
+  end;
+
+
+  // at least in cairo 10.2 JPEG doesn't work ok for PS backend
+  if (Picture.Graphic is TJPegImage) and (backend=cePDF) then
   begin
 
-    // check if picture is shared and already exists
-    isf := nil;
-    if View.SharedName<>'' then begin
-      i := IndexOfImage(View.SharedName);
-      if i>=0 then
-        isf := PImageItem(fImageList[i])^.surface;
-    end;
-
     if isf=nil then begin
+      m := TMemoryStream.Create;
       TJPegImage(Picture.Graphic).SaveToStream(M);
-      isf := cairo_image_surface_create(CAIRO_FORMAT_RGB24, Picture.Width, Picture.Height);
-      cairo_surface_set_mime_data(isf, CAIRO_MIME_TYPE_JPEG, pbyte(m.Memory), m.Size,  @destroymstream, pointer(m));
-
-      if View.SharedName<>'' then begin
-        New(Item);
-        Item^.surface:=isf;
-        Item^.sharename:=View.SharedName;
-        fImageList.Add(Item);
-      end;
+      isf := cairo_image_surface_create(CAIRO_FORMAT_RGB24, picw, pich);
+      cairo_surface_set_mime_data(isf, CAIRO_MIME_TYPE_JPEG, pbyte(m.Memory),
+                                  m.Size,  @destroymstream, pointer(m));
+      AddToList := ImageShared;
     end;
 
   end else
   begin
 
+    if isf=nil then begin
+      imgbuf := GetMem(picw * pich * 4);
+      GraphicToARGB32(Picture.Graphic, imgbuf);
+      isf := cairo_image_surface_create_for_data(imgbuf, CAIRO_FORMAT_ARGB32, picw, pich, picw*4);
+
+      // for sharing non JPeg images, we need CAIRO_MIME_TYPE_UNIQUE_ID
+      // but this is only implemented in cairo 1.12, which is atm too new
+      {$IFDEF CAIRO_HAS_MIME_TYPE_UNIQUE}
+      cairo_surface_set_mime_data(isf, CAIRO_MIME_TYPE_UNIQUE_ID, imgbuf,
+                                  picw * pich * 4, @destroybuf, imgbuf);
+      AddToList := ImageShared;
+      {$ENDIF}
+    end;
+
   end;
 
-  // draw surface
+  if AddToList then begin
+    New(Item);
+    Item^.surface:=isf;
+    Item^.sharename:=View.SharedName;
+    fImageList.Add(Item);
+  end;
+
+  // calc the image scale
   ph := h;
   pw := w;
 
   if view.Stretched then
   begin
     if (View.Flags and flPictRatio<>0) and
-       (Picture.Width>0) and (Picture.Height>0) then
+       (picw>0) and (pich>0) then
     begin
-      r  := Picture.Width/Picture.Height;
+      r  := picw/pich;
       if (w/h) < r then
       begin
         L := h;
-        ph := trunc(w/r + 0.5);
+        ph := rtrunc(w/r);
         if (View.Flags and flPictCenter<>0) then
           y := y + (L-ph) div 2;
       end
       else
       begin
         L := w;
-        pw := trunc(h*r + 0.5);
+        pw := rtrunc(h*r);
         if (View.Flags and flPictCenter<>0) then
           x := x + (L-pw) div 2;
       end;
     end;
   end
   else begin
+    pw := rtrunc(picw * ScaleX) + 1;
+    ph := rtrunc(pich * ScaleY) + 1;
     if (View.Flags and flPictCenter<>0) then begin
-      pw := trunc(Picture.Width * ScaleX + 1.5);
-      ph := trunc(Picture.Height * ScaleY + 1.5);
        x := x + (w - pw) div 2 - 1;
        y := y + (h - ph) div 2 - 1;
     end;
   end;
 
-  cairo_save(cr);
-  cairo_translate(cr, x*ScaleX, y*ScaleX);
-  cairo_scale(cr, pw * ScaleX, ph * ScaleY);
-  cairo_set_source_surface(cr, isf, 0, 0);
-  cairo_paint(cr);
+  // draw the image
+  TCairoPrinterCanvas(fCairoPrinter.Canvas).DrawSurface(
+    rect(0, 0, picw, pich),
+    rect(x, y, x+pw, y+ph),
+    isf);
 
-  if View.SharedName='' then
-  begin
+  if not ImageShared then begin
     cairo_surface_destroy(isf);
-    m.free;
+    if imgbuf<>nil then
+      freemem(imgbuf);
   end;
 end;
 
