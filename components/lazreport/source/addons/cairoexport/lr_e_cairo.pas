@@ -25,6 +25,12 @@ type
     sharename: string;
   end;
 
+  TClipState = record
+    Enabled: boolean;
+    Clipping: boolean;
+    ClipRect: TRect;
+  end;
+
   TlrCairoExport = class(TComponent)
   end;
 
@@ -42,11 +48,14 @@ type
     ScaleX,ScaleY: Double;
     DataRect: TRect;
     fImageList: TfpList;
+    fClipState: TClipState;
     procedure AddShape(Data: TShapeData; x, y, h, w: integer);
     procedure DefaultShowView(View: TfrView; nx, ny, ndy, ndx: Integer);
     procedure DbgPoint(x, y: Integer; color: TColor; delta:Integer=5);
     procedure ClearImageList;
     function  IndexOfImage(SharedName: string): Integer;
+    procedure SaveClipping(NewClipRect: PRect);
+    procedure RestoreClipping;
   protected
     procedure Setup; override;
   public
@@ -199,6 +208,33 @@ begin
       break;
     end;
   end;
+end;
+
+procedure TlrCairoExportFilter.SaveClipping(NewClipRect: PRect);
+begin
+
+  // save current clipping state
+  fClipState.Clipping := fCairoPrinter.Canvas.Clipping;
+  fClipState.ClipRect := fCairoPrinter.Canvas.ClipRect;
+
+  // if supplied, set new cliprect
+  if NewClipRect<>nil then begin
+    fCairoPrinter.Canvas.ClipRect := NewClipRect^;
+    fCairoPrinter.Canvas.Clipping := true;
+  end;
+
+  fClipState.Enabled := true;
+end;
+
+procedure TlrCairoExportFilter.RestoreClipping;
+begin
+  if not fClipState.Enabled then
+    exit;
+
+  fClipState.Enabled := false;
+
+  fCairoPrinter.Canvas.ClipRect := fClipState.ClipRect;
+  fCairoPrinter.Canvas.Clipping := fClipState.Clipping;
 end;
 
 procedure TlrCairoExportFilter.Setup;
@@ -419,6 +455,10 @@ begin
     fImageList.Add(Item);
   end;
 
+  // clipping is only meanful if image is not stretched
+  if not View.Stretched then
+    SaveClipping(@DataRect);
+
   // calc the image scale
   ph := h;
   pw := w;
@@ -465,6 +505,9 @@ begin
     if imgbuf<>nil then
       freemem(imgbuf);
   end;
+
+  if not View.Stretched then
+    RestoreClipping;
 end;
 
 procedure TlrCairoExportFilter.ShowRoundRect(View: TfrRoundRectView; x, y, h,
