@@ -151,7 +151,8 @@ procedure TlrCairoExportFilter.DefaultShowView(View: TfrView; nx, ny, ndy,
 begin
   if (View.FillColor <> clNone)
      and not (View is TfrBarCodeView)
-     and not (View is TfrPictureView)
+     and not ((View is TfrPictureView) and
+              TfrPictureView(View).Stretched and not TfrPictureView(View).KeepAspect)
   then
     ShowBackGround(View, nx, ny, ndy, ndx);
 
