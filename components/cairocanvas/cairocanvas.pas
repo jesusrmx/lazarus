@@ -91,7 +91,6 @@ type
     procedure FrameRect(const ARect: TRect); override;
     procedure Frame(const ARect: TRect); override;
     procedure RoundRect(X1, Y1, X2, Y2: Integer; RX, RY: Integer); override;
-    procedure MixedRoundRect(X1, Y1, X2, Y2: Integer; RX, RY: Integer; SquaredCorners: TSquaredCorners);
     procedure Ellipse(X1, Y1, X2, Y2: Integer); override;
     procedure Arc(ALeft, ATop, ARight, ABottom, Angle16Deg, Angle16DegLength: Integer); override;
     procedure Arc(ALeft, ATop, ARight, ABottom, StX, StY, EX, EY: Integer); override;
@@ -106,6 +105,9 @@ type
     function GetTextMetrics(out M: TLCLTextMetric): boolean; override;
     procedure StretchDraw(const DestRect: TRect; SrcGraphic: TGraphic); override;
     procedure SetPixel(X,Y: Integer; Value: TColor); override;
+  public
+    procedure MixedRoundRect(X1, Y1, X2, Y2: Integer; RX, RY: Integer; SquaredCorners: TSquaredCorners);
+    procedure DrawSurface(const SourceRect, DestRect: TRect; surface: Pcairo_surface_t);
 {  Not implemented
     procedure FloodFill(X, Y: Integer; FillColor: TColor; FillStyle: TFillStyle); override;
     procedure CopyRect(const Dest: TRect; SrcCanvas: TCanvas; const Source: TRect); override;
@@ -709,6 +711,25 @@ begin
     EllipseArcPath(X1+RX, Y1+RY, RX, RY, PI, PI*1.5, True, True);
 
   FillAndStroke;
+  Changed;
+end;
+
+procedure TCairoPrinterCanvas.DrawSurface(const SourceRect, DestRect: TRect;
+  surface: Pcairo_surface_t);
+var
+  SW, SH: Double;
+begin
+  Changing;
+  RequiredState([csHandleValid]);
+
+  cairo_save(cr);
+  cairo_translate(cr, SX(DestRect.Left), SY(DestRect.Top));
+  SW := (DestRect.Right - DestRect.Left)/(SourceRect.Right-SourceRect.Left);
+  SH := (DestRect.Bottom - DestRect.Top)/(SourceRect.Bottom-SourceRect.Top);
+  cairo_scale(cr, SX2(SW), SY2(SH));
+  cairo_set_source_surface(cr, surface, 0, 0);
+  cairo_paint(cr);
+  cairo_restore(cr);
   Changed;
 end;
 
