@@ -84,6 +84,11 @@ function cairo_surface_set_mime_data(surface:Pcairo_surface_t; mime_type:Pchar; 
                                      destroy:cairo_destroy_func_t; closure:pointer):cairo_status_t; cdecl; external LIB_CAIRO;
 
 
+function rtrunc(value: extended): Integer;
+begin
+  result := trunc(value + 0.5);
+end;
+
 { TlrCairoExportFilter }
 
 procedure TlrCairoExportFilter.AddShape(Data: TShapeData; x, y, h, w: integer);
@@ -93,7 +98,7 @@ begin
   fCairoPrinter.Canvas.Brush.Color := Data.FillColor;
   fCairoPrinter.Canvas.Pen.Color := Data.FrameColor;
   fCairoPrinter.Canvas.Pen.Style := TPenStyle(Data.FrameStyle);
-  fCairoPrinter.Canvas.Pen.Width := trunc(Data.FrameWidth*ScaleX + 0.5);
+  fCairoPrinter.Canvas.Pen.Width := rtrunc(Data.FrameWidth*ScaleX);
 
   with fCairoPrinter.Canvas do
   case Data.ShapeType of
@@ -283,7 +288,8 @@ procedure TlrCairoExportFilter.Frame(View: TfrView; x, y, h, w: integer);
 begin
   fCairoPrinter.Canvas.Pen.Style:=TPenStyle(View.FrameStyle);
   fCairoPrinter.Canvas.Pen.Color:=View.FrameColor;
-  fCairoPrinter.Canvas.Pen.Width := trunc(View.FrameWidth*ScaleX + 0.5);
+  fCairoPrinter.Canvas.Pen.Width := rtrunc(View.FrameWidth*ScaleX);
+  fCairoPrinter.Canvas.Brush.style := bsClear;
   fCairoPrinter.Canvas.Rectangle(x, y, x+w, y+h);
 end;
 
@@ -308,7 +314,7 @@ procedure TlrCairoExportFilter.Line(View:TfrView; x1, y1, x2, y2: Integer);
 begin
   fCairoPrinter.Canvas.Pen.Style:=TPenStyle(View.FrameStyle);
   fCairoPrinter.Canvas.Pen.Color:=View.FrameColor;
-  fCairoPrinter.Canvas.Pen.Width := trunc(View.FrameWidth*ScaleX + 0.5);
+  fCairoPrinter.Canvas.Pen.Width := rtrunc(View.FrameWidth*ScaleX);
   fCairoPrinter.Canvas.MoveTo(x1,y1);
   fCairoPrinter.Canvas.LineTo(X2,Y2);
 end;
