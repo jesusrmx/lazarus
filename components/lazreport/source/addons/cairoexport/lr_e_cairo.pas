@@ -48,7 +48,7 @@ type
     procedure ClearImageList;
     function  IndexOfImage(SharedName: string): Integer;
   protected
-    procedure Setup;
+    procedure Setup; override;
   public
     constructor Create(AStream: TStream); override;
     destructor Destroy; override;
@@ -577,4 +577,4 @@ initialization
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Adobe Acrobat PDF (*.pdf)', '*.pdf');
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Postscript (*.ps)', '*.ps');
 
-end.
+end.
