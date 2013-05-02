@@ -399,7 +399,7 @@ const
 var
   Text: string;
   aLine: string;
-  dx, dy, fh: Integer;
+  dx, dy, ox, oy, Angle, fh: Integer;
   r: TRect;
   ts: TTextStyle;
 begin
@@ -430,49 +430,54 @@ begin
     Font.Color := clBlack;
     Font.Size := 8;
     Font.Orientation:=0;
-    // nota, sin esto de arriba, arroja division by zero. INVESTIGAR!!
+    // note, without defining here the font first, throws div by 0. INVESTIGAR!!
     fh := TextHeight('09');
   end;
 
-  fBarC.Left:= x;
-  fBarC.Top := y;
-  fBarC.Angle := 0; // is handled in cairo
-  fBarC.Ratio := 2; // <>2 renders some codes unreadable
+  fBarC.Angle := View.Angle;
+  fBarC.Ratio := 2;
   fBarC.Modul := rtrunc(ScaleX*View.Zoom);
-  fBarC.Height:= H - fh;
 
-  {
-  if (View.Angle = 90.0) or (View.Angle = 270.0) then
-    dy := fBarC.Width
-  else
-    dx := fBarC.Width;
+  Angle := round(View.Angle);
 
-  if (View.Angle = 90) or (View.Angle = 270) then
+  // barcode height
+  dx := w;
+  dy := h;
+  if (Angle=90) or (Angle=270) then begin
+    dy := fBarC.Width;
     fBarC.Height := dx
-  else
+  end
+  else begin
+    dx := fBarC.Width;
     fBarC.Height := dy;
-
-  if (fBarC.Typ=bcCodePostNet) and (View.Angle=0) then begin
-    fBarC.Top:=fBarC.Height;
-    fBarC.Height:=-fBarC.Height;
   end;
 
-  if View.Angle = 90 then begin
-    fBarC.Top:= Round(Height);
-    fBarC.Left:=0;
-  end else
-  if  View.Angle = 180 then begin
-    fBarC.Top:= dy;
-    fBarC.Left:= dx;
-  end else
-  if  View.Angle = 270 then begin
-    fBarC.Top:= 0;
-    fBarC.Left:= dx;
+  // barcode origin
+  ox := x;
+  oy := y;
+  case angle of
+    0:
+      if fBarC.typ=bcCodePostNet then
+      begin
+        oy:=fBarC.Height;
+        fBarC.Height:=-oy;
+      end;
+    90:
+      oy := y+dy;
+    180:
+      begin
+        oy := y+dy;
+        ox := x+dx;
+      end;
+    270:
+      ox := x+dx;
   end;
-  }
+  fBarC.Left := ox;
+  fBarC.Top := oy;
 
   fBarC.DrawBarcode(fCairoPrinter.Canvas);
 
+  // barcode text
   if View.ShowText then
     with fCairoPrinter.Canvas do begin
 
@@ -481,19 +486,26 @@ begin
       else
         aLine := fBarC.Text;
 
-      r := rect(x, y, x+fBarc.Width, y+h);
-      r.Top := r.Bottom - fh;
-      brush.Color := clwhite;
+      r := rect(x, y, x+dx, y+dy);
+
+      font.Orientation := angle * 10;
+
+      case angle of
+          0: begin r.top := r.bottom - fh; oy := r.Top; end;
+        180: begin r.Bottom := r.Top + fh; oy := r.Bottom; ox := r.Right; end;
+         90: begin r.left := r.right - fh; end;
+        270: begin r.right := r.left + fh; end;
+      end;
+
+      brush.Color := clYellow;
       brush.style := bsSolid;
       Fillrect(r);
-
       ts := TextStyle;
       ts.Alignment:=taCenter;
       ts.Layout:=tlcenter;
       ts.SingleLine:=true;
 
-      TextRect(r, r.left, r.top, aLine, ts);
-
+      TextRect(r, ox, oy, aLine, ts);
     end;
 end;
 
@@ -795,4 +807,4 @@ initialization
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Adobe Acrobat PDF (*.pdf)', '*.pdf');
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Postscript (*.ps)', '*.ps');
 
-end.
+end.
