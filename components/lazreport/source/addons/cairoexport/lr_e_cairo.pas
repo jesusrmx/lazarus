@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, types, LResources, LCLProc, Forms, Controls, Graphics, Dialogs,
-  lr_class, lr_barc, lr_rrect, lr_shape, Cairo, CairoCanvas, CairoPrinter;
+  Barcode, lr_class, lr_barc, lr_rrect, lr_shape, Cairo, CairoCanvas, CairoPrinter;
 
 type
   TShapeData = record
@@ -49,6 +49,7 @@ type
     DataRect: TRect;
     fImageList: TfpList;
     fClipState: TClipState;
+    fBarc: TBarcode;
     procedure AddShape(Data: TShapeData; x, y, h, w: integer);
     procedure DefaultShowView(View: TfrView; nx, ny, ndy, ndx: Integer);
     procedure DbgPoint(x, y: Integer; color: TColor; delta:Integer=5);
@@ -267,10 +268,12 @@ begin
     end;
   end;
   fImageList := TfpList.Create;
+  fBarc := TBarcode.Create(nil);
 end;
 
 destructor TlrCairoExportFilter.Destroy;
 begin
+  fBarc.free;
   ClearImageList;
   fImageList.Free;
   fCairoPrinter.Free;
@@ -358,10 +361,140 @@ begin
   fCairoPrinter.Canvas.LineTo(X2,Y2);
 end;
 
+{$HINTS OFF}
+{$NOTES OFF}
+function isNumeric(St: String): Boolean;
+var
+  {%H-}R: Double;
+  E: Integer;
+begin
+  Val(St, R, E);
+  Result := (E = 0);
+end;
+{$NOTES ON}
+{$HINTS ON}
+
 procedure TlrCairoExportFilter.ShowBarCode(View: TfrBarCodeView; x, y, h,
   w: integer);
+const
+  cbDefaultText = '12345678';
+  arrIsAlpha: array[TBarcodeType] of boolean = (
+    false,  //bcCode_2_5_interleaved,
+    false,  //bcCode_2_5_industrial,
+    false,  //bcCode_2_5_matrix,
+    true,   //bcCode39,
+    true,   //bcCode39Extended,
+    true,   //bcCode128A,
+    true,   //bcCode128B,
+    false,  //bcCode128C,
+    true,   //bcCode93,
+    true,   //bcCode93Extended,
+    false,  //bcCodeMSI,
+    false,  //bcCodePostNet,
+    true,   //bcCodeCodabar,
+    false,  //bcCodeEAN8,
+    false   //bcCodeEAN13
+  );
+
+var
+  Text: string;
+  aLine: string;
+  dx, dy, fh: Integer;
+  r: TRect;
+  ts: TTextStyle;
 begin
 
+  fBarC.Typ:= View.BarType;
+  if Trim(View.Memo.Text)='' then
+    exit;
+
+  Text := View.Memo.Text;
+  aLine := View.Memo.Strings[0];
+
+  if (Text <> '') and (pos('[',aLine)=0) and
+    ((arrIsAlpha[fBarC.typ] or IsNumeric(aLine) or
+      fBarC.BarcodeTypeChecked(fBarC.Typ)))  then
+  begin
+    fBarC.Text := aLine;
+    fBarC.Checksum := view.CheckSum;
+  end else begin
+    fBarC.Text := cbDefaultText;
+    fBarC.Checksum := true;
+  end;
+
+  if fBarC.Text='0' then
+    exit;
+
+  with fCairoPrinter.Canvas do begin
+    Font.Name := 'Arial';
+    Font.Color := clBlack;
+    Font.Size := 8;
+    Font.Orientation:=0;
+    // nota, sin esto de arriba, arroja division by zero. INVESTIGAR!!
+    fh := TextHeight('09');
+  end;
+
+  fBarC.Left:= x;
+  fBarC.Top := y;
+  fBarC.Angle := 0; // is handled in cairo
+  fBarC.Ratio := 2; // <>2 renders some codes unreadable
+  fBarC.Modul := rtrunc(ScaleX*View.Zoom);
+  fBarC.Height:= H - fh;
+
+  {
+  if (View.Angle = 90.0) or (View.Angle = 270.0) then
+    dy := fBarC.Width
+  else
+    dx := fBarC.Width;
+
+  if (View.Angle = 90) or (View.Angle = 270) then
+    fBarC.Height := dx
+  else
+    fBarC.Height := dy;
+
+  if (fBarC.Typ=bcCodePostNet) and (View.Angle=0) then begin
+    fBarC.Top:=fBarC.Height;
+    fBarC.Height:=-fBarC.Height;
+  end;
+
+  if View.Angle = 90 then begin
+    fBarC.Top:= Round(Height);
+    fBarC.Left:=0;
+  end else
+  if  View.Angle = 180 then begin
+    fBarC.Top:= dy;
+    fBarC.Left:= dx;
+  end else
+  if  View.Angle = 270 then begin
+    fBarC.Top:= 0;
+    fBarC.Left:= dx;
+  end;
+  }
+
+  fBarC.DrawBarcode(fCairoPrinter.Canvas);
+
+  if View.ShowText then
+    with fCairoPrinter.Canvas do begin
+
+      if fBarC.Checksum then
+        aLine := fBarC.CodeText
+      else
+        aLine := fBarC.Text;
+
+      r := rect(x, y, x+fBarc.Width, y+h);
+      r.Top := r.Bottom - fh;
+      brush.Color := clwhite;
+      brush.style := bsSolid;
+      Fillrect(r);
+
+      ts := TextStyle;
+      ts.Alignment:=taCenter;
+      ts.Layout:=tlcenter;
+      ts.SingleLine:=true;
+
+      TextRect(r, r.left, r.top, aLine, ts);
+
+    end;
 end;
 
 procedure destroymstream(data: pointer); cdecl;
@@ -379,8 +512,7 @@ end;
 procedure TlrCairoExportFilter.ShowPicture(View: TfrPictureView; x, y, h,
   w: integer);
 var
-  cr: pcairo_t;
-  sf, isf: pcairo_surface_t;
+  isf: pcairo_surface_t;
   m: TMemoryStream;
   item: PImageItem;
 
@@ -397,9 +529,6 @@ begin
   picture := View.Picture;
   picw := Picture.Graphic.Width;
   pich := Picture.Graphic.Height;
-
-  cr := pcairo_t(fCairoPrinter.Canvas.Handle);
-  sf := cairo_get_target(cr);
 
   ImageShared := (View.SharedName<>'') and (Backend=cePDF);
 
