@@ -7,7 +7,7 @@
     <KeyWords Value=""/>
     <Comments Value=""/>
     <ReportCreateDate Value="2013-05-02 08:43:25"/>
-    <ReportLastChange Value="2013-05-02 08:46:56"/>
+    <ReportLastChange Value="2013-05-02 23:53:50"/>
     <ReportVersionBuild Value=""/>
     <ReportVersionMajor Value=""/>
     <ReportVersionMinor Value=""/>
@@ -178,7 +178,7 @@
           <StreamMode Value="0"/>
           <Size>
             <Left Value="84"/>
-            <Top Value="152"/>
+            <Top Value="160"/>
             <Width Value="116"/>
             <Height Value="46"/>
           </Size>
@@ -503,7 +503,7 @@
           <Typ Value="gtAddIn"/>
           <StreamMode Value="0"/>
           <Size>
-            <Left Value="84"/>
+            <Left Value="112"/>
             <Top Value="96"/>
             <Width Value="174"/>
             <Height Value="46"/>
@@ -1659,7 +1659,7 @@
           <Typ Value="gtAddIn"/>
           <StreamMode Value="0"/>
           <Size>
-            <Left Value="336"/>
+            <Left Value="352"/>
             <Top Value="20"/>
             <Width Value="64"/>
             <Height Value="232"/>
@@ -1711,8 +1711,8 @@
           <Typ Value="gtAddIn"/>
           <StreamMode Value="0"/>
           <Size>
-            <Left Value="208"/>
-            <Top Value="148"/>
+            <Left Value="224"/>
+            <Top Value="160"/>
             <Width Value="116"/>
             <Height Value="46"/>
           </Size>

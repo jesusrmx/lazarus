@@ -425,14 +425,16 @@ begin
   if fBarC.Text='0' then
     exit;
 
-  with fCairoPrinter.Canvas do begin
-    Font.Name := 'Arial';
-    Font.Color := clBlack;
-    Font.Size := 8;
-    Font.Orientation:=0;
-    // note, without defining here the font first, throws div by 0. INVESTIGAR!!
-    fh := TextHeight('09');
-  end;
+  if View.ShowText then
+    with fCairoPrinter.Canvas do begin
+      Font.Name := 'Arial';
+      Font.Color := clBlack;
+      Font.Size := 10;
+      Font.Orientation:=0;
+      fh := TextHeight('09');
+    end
+  else
+    fh := 0;
 
   fBarC.Angle := View.Angle;
   fBarC.Ratio := 2;
@@ -445,11 +447,11 @@ begin
   dy := h;
   if (Angle=90) or (Angle=270) then begin
     dy := fBarC.Width;
-    fBarC.Height := dx
+    fBarC.Height := dx - fh;
   end
   else begin
     dx := fBarC.Width;
-    fBarC.Height := dy;
+    fBarC.Height := dy - fh;
   end;
 
   // barcode origin
@@ -493,11 +495,11 @@ begin
       case angle of
           0: begin r.top := r.bottom - fh; oy := r.Top; end;
         180: begin r.Bottom := r.Top + fh; oy := r.Bottom; ox := r.Right; end;
-         90: begin r.left := r.right - fh; end;
-        270: begin r.right := r.left + fh; end;
+         90: begin r.left := r.right - fh; oy := r.Bottom; ox := r.Left;  end;
+        270: begin r.right := r.left + fh; oy := r.Top;    ox := r.Right; end;
       end;
 
-      brush.Color := clYellow;
+      brush.Color := clWhite;
       brush.style := bsSolid;
       Fillrect(r);
       ts := TextStyle;
@@ -807,4 +809,4 @@ initialization
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Adobe Acrobat PDF (*.pdf)', '*.pdf');
     frRegisterExportFilter(TlrCairoExportFilter, 'Cairo Postscript (*.ps)', '*.ps');
 
-end.
+end.
